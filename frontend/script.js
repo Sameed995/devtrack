@@ -1,0 +1,275 @@
+const API_BASE = 'http://127.0.0.1:8000';
+
+// Show/hide sections
+function showSection(sectionId) {
+    document.querySelectorAll('.section').forEach(section => {
+        section.classList.remove('active');
+    });
+    document.getElementById(sectionId).classList.add('active');
+    
+    if (sectionId === 'dashboard') {
+        loadEndpoints();
+    } else if (sectionId === 'logs') {
+        loadEndpointsForFilter();
+        loadLogs();
+    }
+}
+
+// Load endpoints for dashboard
+function loadEndpoints() {
+    fetch(`${API_BASE}/endpoints/`)
+        .then(res => res.json())
+        .then(endpoints => {
+            const list = document.getElementById('endpoints-list');
+            
+            if (endpoints.length === 0) {
+                list.innerHTML = '<p class="loading">No endpoints registered yet.</p>';
+                return;
+            }
+            
+            let html = '<table>';
+            html += '<tr><th>ID</th><th>Name</th><th>URL</th><th>Created</th><th>Actions</th></tr>';
+            
+            endpoints.forEach(ep => {
+                const created = new Date(ep.created_at).toLocaleDateString();
+                html += `<tr>
+                    <td>${ep.id}</td>
+                    <td>${escapeHtml(ep.name)}</td>
+                    <td><small>${escapeHtml(ep.url)}</small></td>
+                    <td>${created}</td>
+                    <td class="endpoint-actions">
+                        <button class="btn btn-small" onclick="triggerCheck(${ep.id})">Check</button>
+                        <button class="btn btn-small" onclick="viewSummary(${ep.id})">Summary</button>
+                        <button class="btn btn-small btn-danger" onclick="deleteEndpoint(${ep.id})">Delete</button>
+                    </td>
+                </tr>`;
+            });
+            
+            html += '</table>';
+            list.innerHTML = html;
+        })
+        .catch(err => {
+            document.getElementById('endpoints-list').innerHTML = '<p class="loading">Error loading endpoints.</p>';
+            console.error(err);
+        });
+}
+
+// Register endpoint
+document.getElementById('register-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    
+    const name = document.getElementById('endpoint-name').value;
+    const url = document.getElementById('endpoint-url').value;
+    
+    fetch(`${API_BASE}/endpoints/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, url })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.id) {
+            showNotification('Endpoint registered successfully!', 'success');
+            document.getElementById('register-form').reset();
+            setTimeout(() => {
+                showSection('dashboard');
+            }, 1500);
+        }
+    })
+    .catch(err => {
+        showNotification('Error registering endpoint.', 'error');
+        console.error(err);
+    });
+});
+
+// Trigger health check
+function triggerCheck(endpointId) {
+    fetch(`${API_BASE}/endpoints/${endpointId}/check/`, {
+        method: 'POST'
+    })
+    .then(res => res.json())
+    .then(data => {
+        showNotification(`Check triggered! Status: ${data.status} | Response Time: ${data.response_time_ms}ms`, 'success');
+        loadEndpoints();
+    })
+    .catch(err => {
+        showNotification('Error triggering check.', 'error');
+        console.error(err);
+    });
+}
+
+// View endpoint summary
+function viewSummary(endpointId) {
+    fetch(`${API_BASE}/endpoints/${endpointId}/summary/`)
+        .then(res => res.json())
+        .then(data => {
+            const uptime = (data.uptime_percentage || 0).toFixed(2);
+            const avgTime = (data.avg_response_time_ms || 0).toFixed(2);
+            const summary = `Uptime: ${uptime}% | Avg Response Time: ${avgTime}ms | Total Checks: ${data.total_checks}`;
+            showNotification(summary, 'info');
+        })
+        .catch(err => {
+            showNotification('Error loading summary.', 'error');
+            console.error(err);
+        });
+}
+
+// Delete endpoint
+function deleteEndpoint(endpointId) {
+    const confirmed = confirm('Are you sure you want to delete this endpoint and all its logs?');
+    if (!confirmed) return;
+    
+    fetch(`${API_BASE}/endpoints/${endpointId}/`, {
+        method: 'DELETE'
+    })
+    .then(() => {
+        showNotification('Endpoint deleted.', 'success');
+        loadEndpoints();
+    })
+    .catch(err => {
+        showNotification('Error deleting endpoint.', 'error');
+        console.error(err);
+    });
+}
+
+// Load endpoints for filter
+function loadEndpointsForFilter() {
+    fetch(`${API_BASE}/endpoints/`)
+        .then(res => res.json())
+        .then(endpoints => {
+            const filter = document.getElementById('endpoint-filter');
+            filter.innerHTML = '<option value="">All Endpoints</option>';
+            
+            endpoints.forEach(ep => {
+                const option = document.createElement('option');
+                option.value = ep.id;
+                option.textContent = ep.name;
+                filter.appendChild(option);
+            });
+        })
+        .catch(err => console.error(err));
+}
+
+// Load logs
+function loadLogs() {
+    const endpointId = document.getElementById('endpoint-filter').value;
+    const url = endpointId ? `${API_BASE}/endpoints/${endpointId}/logs/` : `${API_BASE}/logs/`;
+    
+    fetch(url)
+        .then(res => res.json())
+        .then(logs => {
+            const list = document.getElementById('logs-list');
+            
+            if (logs.length === 0) {
+                list.innerHTML = '<p class="loading">No logs found.</p>';
+                return;
+            }
+            
+            let html = '<table>';
+            html += '<tr><th>Endpoint ID</th><th>Status</th><th>Response Time</th><th>Status Code</th><th>Error Message</th><th>Created</th></tr>';
+            
+            logs.forEach(log => {
+                const created = new Date(log.created_at).toLocaleString();
+                const statusClass = log.status === 'UP' ? 'status-up' : 'status-down';
+                const responseTime = log.response_time_ms ? log.response_time_ms.toFixed(2) + 'ms' : '-';
+                const statusCode = log.status_code || '-';
+                const errorMsg = log.error_message || '-';
+                
+                html += `<tr>
+                    <td>${log.endpoint_id}</td>
+                    <td class="${statusClass}">${log.status}</td>
+                    <td>${responseTime}</td>
+                    <td>${statusCode}</td>
+                    <td><small>${escapeHtml(errorMsg)}</small></td>
+                    <td><small>${created}</small></td>
+                </tr>`;
+            });
+            
+            html += '</table>';
+            list.innerHTML = html;
+        })
+        .catch(err => {
+            document.getElementById('logs-list').innerHTML = '<p class="loading">Error loading logs.</p>';
+            console.error(err);
+        });
+}
+
+// Show notification on page
+function showNotification(message, type = 'info') {
+    let notification = document.getElementById('notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'notification';
+        notification.className = 'notification';
+        document.body.insertBefore(notification, document.body.firstChild);
+    }
+    
+    notification.textContent = message;
+    notification.className = `notification notification-${type}`;
+    notification.style.display = 'block';
+    
+    setTimeout(() => {
+        notification.style.display = 'none';
+    }, 4000);
+}
+
+// Download logs as text file
+function downloadLogs() {
+    const endpointId = document.getElementById('endpoint-filter').value;
+    const url = endpointId ? `${API_BASE}/endpoints/${endpointId}/logs/` : `${API_BASE}/logs/`;
+    
+    fetch(url)
+        .then(res => res.json())
+        .then(logs => {
+            if (logs.length === 0) {
+                showNotification('No logs to download.', 'info');
+                return;
+            }
+            
+            let content = 'DevTrack - Check Logs Export\n';
+            content += `Generated: ${new Date().toLocaleString()}\n`;
+            content += '='.repeat(80) + '\n\n';
+            
+            logs.forEach(log => {
+                content += `Endpoint ID: ${log.endpoint_id}\n`;
+                content += `Status: ${log.status}\n`;
+                content += `Response Time: ${log.response_time_ms ? log.response_time_ms.toFixed(2) + 'ms' : 'N/A'}\n`;
+                content += `Status Code: ${log.status_code || 'N/A'}\n`;
+                content += `Error Message: ${log.error_message || 'None'}\n`;
+                content += `Created: ${new Date(log.created_at).toLocaleString()}\n`;
+                content += '-'.repeat(80) + '\n\n';
+            });
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `devtrack-logs-${new Date().toISOString().slice(0, 10)}.txt`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+            
+            showNotification('Logs downloaded successfully.', 'success');
+        })
+        .catch(err => {
+            showNotification('Error downloading logs.', 'error');
+            console.error(err);
+        });
+}
+
+// 
+// Utility function to escape HTML
+function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+// Load dashboard on page load
+window.addEventListener('load', () => {
+    showSection('dashboard');
+});
