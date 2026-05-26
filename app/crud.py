@@ -1,4 +1,6 @@
 from typing import Optional
+from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -9,10 +11,14 @@ def create_endpoint(db: Session, payload: schemas.EndpointCreate) -> models.Endp
         name=payload.name,
         url=str(payload.url),
     )
-    db.add(endpoint)
-    db.commit()
-    db.refresh(endpoint)
-    return endpoint
+    try:
+        db.add(endpoint)
+        db.commit()
+        db.refresh(endpoint)
+        return endpoint
+    except IntegrityError:
+        db.rollback()
+        raise ValueError("An endpoint with this URL already exists")
 
 
 def get_endpoint(db: Session, endpoint_id: int) -> Optional[models.Endpoint]:
@@ -29,6 +35,13 @@ def delete_endpoint(db: Session, endpoint_id: int) -> bool:
         return False
     db.delete(endpoint)
     db.commit()
+    
+    # If no endpoints left, reset the sequence
+    remaining_count = db.query(models.Endpoint).count()
+    if remaining_count == 0:
+        db.execute(text("ALTER SEQUENCE public.endpoints_id_seq RESTART WITH 1"))
+        db.commit()
+    
     return True
 
 
@@ -74,3 +87,10 @@ def get_logs_for_endpoint(
         .limit(limit)
         .all()
     )
+
+
+def delete_all_endpoints(db: Session) -> None:
+    """Delete all endpoints and reset the PostgreSQL sequence to 1."""
+    db.query(models.Endpoint).delete()
+    db.execute(text("ALTER SEQUENCE public.endpoints_id_seq RESTART WITH 1"))
+    db.commit()

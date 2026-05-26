@@ -66,7 +66,14 @@ document.getElementById('register-form')?.addEventListener('submit', (e) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, url })
     })
-    .then(res => res.json())
+    .then(res => {
+        if (!res.ok) {
+            return res.json().then(data => {
+                throw new Error(data.detail || 'Error registering endpoint.');
+            });
+        }
+        return res.json();
+    })
     .then(data => {
         if (data.id) {
             showNotification('Endpoint registered successfully!', 'success');
@@ -77,7 +84,7 @@ document.getElementById('register-form')?.addEventListener('submit', (e) => {
         }
     })
     .catch(err => {
-        showNotification('Error registering endpoint.', 'error');
+        showNotification(err.message, 'error');
         console.error(err);
     });
 });
@@ -116,20 +123,23 @@ function viewSummary(endpointId) {
 
 // Delete endpoint
 function deleteEndpoint(endpointId) {
-    const confirmed = confirm('Are you sure you want to delete this endpoint and all its logs?');
-    if (!confirmed) return;
-    
-    fetch(`${API_BASE}/endpoints/${endpointId}/`, {
-        method: 'DELETE'
-    })
-    .then(() => {
-        showNotification('Endpoint deleted.', 'success');
-        loadEndpoints();
-    })
-    .catch(err => {
-        showNotification('Error deleting endpoint.', 'error');
-        console.error(err);
-    });
+    showConfirmModal(
+        'Delete Endpoint?',
+        'Are you sure you want to delete this endpoint and all its logs? This action cannot be undone.',
+        () => {
+            fetch(`${API_BASE}/endpoints/${endpointId}/`, {
+                method: 'DELETE'
+            })
+            .then(() => {
+                showNotification('Endpoint deleted.', 'success');
+                loadEndpoints();
+            })
+            .catch(err => {
+                showNotification('Error deleting endpoint.', 'error');
+                console.error(err);
+            });
+        }
+    );
 }
 
 // Load endpoints for filter
@@ -211,6 +221,45 @@ function showNotification(message, type = 'info') {
     setTimeout(() => {
         notification.style.display = 'none';
     }, 4000);
+}
+
+// Show confirmation modal
+function showConfirmModal(title, message, onConfirm) {
+    let overlay = document.getElementById('confirm-modal-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'confirm-modal-overlay';
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+            <div class="modal">
+                <h3></h3>
+                <p></p>
+                <div class="modal-buttons">
+                    <button class="btn btn-cancel" onclick="closeConfirmModal()">Cancel</button>
+                    <button class="btn btn-confirm" id="confirm-btn">Delete</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+    }
+    
+    overlay.querySelector('h3').textContent = title;
+    overlay.querySelector('p').textContent = message;
+    overlay.classList.add('show');
+    
+    const confirmBtn = document.getElementById('confirm-btn');
+    confirmBtn.onclick = () => {
+        closeConfirmModal();
+        onConfirm();
+    };
+}
+
+// Close confirmation modal
+function closeConfirmModal() {
+    const overlay = document.getElementById('confirm-modal-overlay');
+    if (overlay) {
+        overlay.classList.remove('show');
+    }
 }
 
 // Download logs as text file

@@ -11,8 +11,11 @@ router = APIRouter(prefix="/endpoints", tags=["Endpoints"])
 @router.post("/", response_model=schemas.EndpointResponse, status_code=status.HTTP_201_CREATED)
 def create_endpoint(payload: schemas.EndpointCreate, db: Session = Depends(get_db)):
     """Register a new API endpoint to monitor."""
-    endpoint = crud.create_endpoint(db, payload)
-    return endpoint
+    try:
+        endpoint = crud.create_endpoint(db, payload)
+        return endpoint
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.get("/", response_model=list[schemas.EndpointResponse])
@@ -36,6 +39,12 @@ def delete_endpoint(endpoint_id: int, db: Session = Depends(get_db)):
     deleted = crud.delete_endpoint(db, endpoint_id)
     if not deleted:
         raise HTTPException(status_code=404, detail=f"Endpoint {endpoint_id} not found")
+
+
+@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
+def delete_all_endpoints(db: Session = Depends(get_db)):
+    """Delete all endpoints and reset the ID sequence to 1."""
+    crud.delete_all_endpoints(db)
 
 
 @router.post("/{endpoint_id}/check", response_model=schemas.CheckLogResponse, status_code=status.HTTP_201_CREATED)
