@@ -8,6 +8,11 @@ from app.models import StatusEnum
 class EndpointCreate(BaseModel):
     name: str
     url: HttpUrl
+    interval_minutes: Optional[int] = None  # 2, 5, 10, 15 or None for manual
+
+
+class EndpointUpdate(BaseModel):
+    interval_minutes: Optional[int] = None
 
 
 class EndpointResponse(BaseModel):
@@ -16,6 +21,7 @@ class EndpointResponse(BaseModel):
     id: int
     name: str
     url: str
+    interval_minutes: Optional[int] = None
     created_at: datetime
 
 

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app import crud, schemas
 from app.database import get_db
 from app.services.monitor import run_health_check, compute_summary
+from app.services.scheduler import schedule_endpoint_check
 
 router = APIRouter(prefix="/endpoints", tags=["Endpoints"])
 
@@ -13,6 +14,8 @@ def create_endpoint(payload: schemas.EndpointCreate, db: Session = Depends(get_d
     """Register a new API endpoint to monitor."""
     try:
         endpoint = crud.create_endpoint(db, payload)
+        # Schedule automatic checks if interval is set
+        schedule_endpoint_check(endpoint)
         return endpoint
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -72,3 +75,15 @@ def get_summary(endpoint_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Endpoint {endpoint_id} not found")
 
     return compute_summary(db, endpoint)
+
+
+@router.patch("/{endpoint_id}/interval", response_model=schemas.EndpointResponse)
+def update_endpoint_interval(endpoint_id: int, payload: schemas.EndpointUpdate, db: Session = Depends(get_db)):
+    """Update the automatic check interval for an endpoint."""
+    endpoint = crud.update_endpoint_interval(db, endpoint_id, payload.interval_minutes)
+    if not endpoint:
+        raise HTTPException(status_code=404, detail=f"Endpoint {endpoint_id} not found")
+    
+    # Reschedule checks with new interval
+    schedule_endpoint_check(endpoint)
+    return endpoint

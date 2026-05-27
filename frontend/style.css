@@ -289,6 +289,14 @@ tr:hover {
     font-weight: bold;
 }
 
+.interval-select {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid #bdc3c7;
+    background-color: #fff;
+    font-size: 13px;
+}
+
 .endpoint-actions {
     display: flex;
     gap: 10px;

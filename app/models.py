@@ -17,6 +17,7 @@ class Endpoint(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     url = Column(String(2048), nullable=False, unique=True)
+    interval_minutes = Column(Integer, nullable=True)  # 2, 5, 10, 15 minutes (None = manual only)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     logs = relationship("CheckLog", back_populates="endpoint", cascade="all, delete-orphan")

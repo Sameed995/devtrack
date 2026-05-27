@@ -42,6 +42,16 @@
                 <label for="endpoint-url">Endpoint URL:</label>
                 <input type="url" id="endpoint-url" placeholder="e.g., https://api.github.com" required>
             </div>
+            <div class="form-group">
+                <label for="endpoint-interval">Check Interval (optional):</label>
+                <select id="endpoint-interval">
+                    <option value="">Manual Check Only</option>
+                    <option value="2">Every 2 Minutes</option>
+                    <option value="5">Every 5 Minutes</option>
+                    <option value="10">Every 10 Minutes</option>
+                    <option value="15">Every 15 Minutes</option>
+                </select>
+            </div>
             <button type="submit" class="btn">Register Endpoint</button>
         </form>
     </section>

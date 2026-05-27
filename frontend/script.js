@@ -28,14 +28,24 @@ function loadEndpoints() {
             }
             
             let html = '<table>';
-            html += '<tr><th>ID</th><th>Name</th><th>URL</th><th>Created</th><th>Actions</th></tr>';
+            html += '<tr><th>ID</th><th>Name</th><th>URL</th><th>Interval</th><th>Created</th><th>Actions</th></tr>';
             
             endpoints.forEach(ep => {
                 const created = new Date(ep.created_at).toLocaleDateString();
+                const interval = ep.interval_minutes ? `${ep.interval_minutes}m` : 'Manual';
                 html += `<tr>
                     <td>${ep.id}</td>
                     <td>${escapeHtml(ep.name)}</td>
                     <td><small>${escapeHtml(ep.url)}</small></td>
+                    <td>
+                        <select onchange="updateInterval(${ep.id}, this.value)" class="interval-select">
+                            <option value="">Manual</option>
+                            <option value="2" ${ep.interval_minutes === 2 ? 'selected' : ''}>2 min</option>
+                            <option value="5" ${ep.interval_minutes === 5 ? 'selected' : ''}>5 min</option>
+                            <option value="10" ${ep.interval_minutes === 10 ? 'selected' : ''}>10 min</option>
+                            <option value="15" ${ep.interval_minutes === 15 ? 'selected' : ''}>15 min</option>
+                        </select>
+                    </td>
                     <td>${created}</td>
                     <td class="endpoint-actions">
                         <button class="btn btn-small" onclick="triggerCheck(${ep.id})">Check</button>
@@ -60,11 +70,18 @@ document.getElementById('register-form')?.addEventListener('submit', (e) => {
     
     const name = document.getElementById('endpoint-name').value;
     const url = document.getElementById('endpoint-url').value;
+    const interval = document.getElementById('endpoint-interval').value;
+    
+    const payload = { 
+        name, 
+        url,
+        interval_minutes: interval ? parseInt(interval) : null
+    };
     
     fetch(`${API_BASE}/endpoints/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, url })
+        body: JSON.stringify(payload)
     })
     .then(res => {
         if (!res.ok) {
@@ -349,8 +366,36 @@ function downloadLogsAsCSV() {
         });
 }
 
+// Update endpoint check interval
+function updateInterval(endpointId, interval) {
+    const payload = {
+        interval_minutes: interval ? parseInt(interval) : null
+    };
+    
+    fetch(`${API_BASE}/endpoints/${endpointId}/interval`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error('Failed to update interval');
+        }
+        return res.json();
+    })
+    .then(data => {
+        const intervalText = data.interval_minutes ? `${data.interval_minutes} minutes` : 'manual checks only';
+        showNotification(`Check interval updated to ${intervalText}`, 'success');
+        loadEndpoints();
+    })
+    .catch(err => {
+        showNotification('Error updating interval.', 'error');
+        console.error(err);
+        loadEndpoints(); // Reload to reset the dropdown
+    });
+}
+
 // 
-// Utility function to escape HTML
 function escapeHtml(text) {
     if (!text) return '';
     const map = {

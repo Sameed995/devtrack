@@ -10,6 +10,7 @@ def create_endpoint(db: Session, payload: schemas.EndpointCreate) -> models.Endp
     endpoint = models.Endpoint(
         name=payload.name,
         url=str(payload.url),
+        interval_minutes=payload.interval_minutes,
     )
     try:
         db.add(endpoint)
@@ -94,3 +95,14 @@ def delete_all_endpoints(db: Session) -> None:
     db.query(models.Endpoint).delete()
     db.execute(text("ALTER SEQUENCE public.endpoints_id_seq RESTART WITH 1"))
     db.commit()
+
+
+def update_endpoint_interval(db: Session, endpoint_id: int, interval_minutes: int) -> Optional[models.Endpoint]:
+    """Update the check interval for an endpoint."""
+    endpoint = get_endpoint(db, endpoint_id)
+    if not endpoint:
+        return None
+    endpoint.interval_minutes = interval_minutes
+    db.commit()
+    db.refresh(endpoint)
+    return endpoint

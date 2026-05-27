@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine
 from app import models
 from app.routers import endpoints, logs
+from app.services.scheduler import start_scheduler, stop_scheduler
 
 app = FastAPI(
     title="DevTrack",
@@ -28,8 +29,14 @@ app.include_router(logs.router)
 
 
 @app.on_event("startup")
-def create_tables() -> None:
+def startup_event() -> None:
     models.Base.metadata.create_all(bind=engine)
+    start_scheduler()
+
+
+@app.on_event("shutdown")
+def shutdown_event() -> None:
+    stop_scheduler()
 
 
 @app.get("/", tags=["Health"])
