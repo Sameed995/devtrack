@@ -304,6 +304,51 @@ function downloadLogs() {
         });
 }
 
+// Download logs as CSV file
+function downloadLogsAsCSV() {
+    const endpointId = document.getElementById('endpoint-filter').value;
+    const url = endpointId ? `${API_BASE}/endpoints/${endpointId}/logs/` : `${API_BASE}/logs/`;
+    
+    fetch(url)
+        .then(res => res.json())
+        .then(logs => {
+            if (logs.length === 0) {
+                showNotification('No logs to download.', 'info');
+                return;
+            }
+            
+            // Create CSV header
+            const headers = ['Endpoint ID', 'Status', 'Response Time (ms)', 'Status Code', 'Error Message', 'Created'];
+            let csv = headers.map(h => `"${h}"`).join(',') + '\n';
+            
+            // Add rows
+            logs.forEach(log => {
+                const row = [
+                    log.endpoint_id,
+                    log.status,
+                    log.response_time_ms ? log.response_time_ms.toFixed(2) : 'N/A',
+                    log.status_code || 'N/A',
+                    (log.error_message || 'None').replace(/"/g, '""'), // Escape quotes
+                    new Date(log.created_at).toLocaleString()
+                ];
+                csv += row.map(cell => `"${cell}"`).join(',') + '\n';
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `devtrack-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+            
+            showNotification('Logs downloaded as CSV successfully.', 'success');
+        })
+        .catch(err => {
+            showNotification('Error downloading logs.', 'error');
+            console.error(err);
+        });
+}
+
 // 
 // Utility function to escape HTML
 function escapeHtml(text) {
