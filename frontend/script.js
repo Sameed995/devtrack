@@ -1,5 +1,13 @@
 const API_BASE = 'http://127.0.0.1:8000';
 
+// Endpoint name cache for rendering logs
+let endpointNameById = {};
+
+function getEndpointName(endpointId) {
+    const name = endpointNameById[String(endpointId)];
+    return name ? name : `Endpoint ${endpointId}`;
+}
+
 // Auto-refresh logs while the Logs tab is active
 const LOGS_AUTO_REFRESH_MS = 5000;
 let logsAutoRefreshTimerId = null;
@@ -64,6 +72,12 @@ function loadEndpoints() {
         .then(res => res.json())
         .then(endpoints => {
             const list = document.getElementById('endpoints-list');
+
+            // Update name cache
+            endpointNameById = {};
+            endpoints.forEach(ep => {
+                endpointNameById[String(ep.id)] = ep.name;
+            });
             
             if (endpoints.length === 0) {
                 list.innerHTML = '<p class="loading">No endpoints registered yet.</p>';
@@ -211,6 +225,12 @@ function loadEndpointsForFilter() {
         .then(endpoints => {
             const filter = document.getElementById('endpoint-filter');
             filter.innerHTML = '<option value="">All Endpoints</option>';
+
+            // Update name cache
+            endpointNameById = {};
+            endpoints.forEach(ep => {
+                endpointNameById[String(ep.id)] = ep.name;
+            });
             
             endpoints.forEach(ep => {
                 const option = document.createElement('option');
@@ -218,6 +238,13 @@ function loadEndpointsForFilter() {
                 option.textContent = ep.name;
                 filter.appendChild(option);
             });
+
+            // If we're on the Logs tab and logs are already rendered, re-render so names appear
+            const logsSection = document.getElementById('logs');
+            if (logsSection && logsSection.classList.contains('active')) {
+                lastLogsSignature = null;
+                loadLogs();
+            }
         })
         .catch(err => console.error(err));
 }
@@ -245,7 +272,7 @@ function loadLogs(options = {}) {
             }
             
             let html = '<table>';
-            html += '<tr><th>Endpoint ID</th><th>Status</th><th>Response Time</th><th>Status Code</th><th>Error Message</th><th>Created</th></tr>';
+            html += '<tr><th>Endpoint</th><th>Status</th><th>Response Time</th><th>Status Code</th><th>Error Message</th><th>Created</th></tr>';
             
             logs.forEach(log => {
                 const created = new Date(log.created_at).toLocaleString();
@@ -253,9 +280,10 @@ function loadLogs(options = {}) {
                 const responseTime = log.response_time_ms ? log.response_time_ms.toFixed(2) + 'ms' : '-';
                 const statusCode = log.status_code || '-';
                 const errorMsg = log.error_message || '-';
+                const endpointName = getEndpointName(log.endpoint_id);
                 
                 html += `<tr>
-                    <td>${log.endpoint_id}</td>
+                    <td>${escapeHtml(endpointName)}</td>
                     <td class="${statusClass}">${log.status}</td>
                     <td>${responseTime}</td>
                     <td>${statusCode}</td>
@@ -349,7 +377,8 @@ function downloadLogs() {
             content += '='.repeat(80) + '\n\n';
             
             logs.forEach(log => {
-                content += `Endpoint ID: ${log.endpoint_id}\n`;
+                const endpointName = getEndpointName(log.endpoint_id);
+                content += `Endpoint: ${endpointName} (ID: ${log.endpoint_id})\n`;
                 content += `Status: ${log.status}\n`;
                 content += `Response Time: ${log.response_time_ms ? log.response_time_ms.toFixed(2) + 'ms' : 'N/A'}\n`;
                 content += `Status Code: ${log.status_code || 'N/A'}\n`;
@@ -387,12 +416,14 @@ function downloadLogsAsCSV() {
             }
             
             // Create CSV header
-            const headers = ['Endpoint ID', 'Status', 'Response Time (ms)', 'Status Code', 'Error Message', 'Created'];
+            const headers = ['Endpoint Name', 'Endpoint ID', 'Status', 'Response Time (ms)', 'Status Code', 'Error Message', 'Created'];
             let csv = headers.map(h => `"${h}"`).join(',') + '\n';
             
             // Add rows
             logs.forEach(log => {
+                const endpointName = getEndpointName(log.endpoint_id);
                 const row = [
+                    endpointName,
                     log.endpoint_id,
                     log.status,
                     log.response_time_ms ? log.response_time_ms.toFixed(2) : 'N/A',
