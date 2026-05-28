@@ -30,6 +30,12 @@ function stopLogsAutoRefresh() {
 
 // Show/hide sections
 function showSection(sectionId) {
+    try {
+        localStorage.setItem('devtrack.activeSection', sectionId);
+    } catch (_) {
+        // ignore storage errors (private mode, disabled, etc.)
+    }
+
     document.querySelectorAll('.section').forEach(section => {
         section.classList.remove('active');
     });
@@ -504,5 +510,15 @@ window.addEventListener('load', () => {
         }
     });
 
-    showSection('dashboard');
+    let initialSection = 'dashboard';
+    try {
+        const saved = localStorage.getItem('devtrack.activeSection');
+        if (saved && document.getElementById(saved)) {
+            initialSection = saved;
+        }
+    } catch (_) {
+        // ignore storage errors
+    }
+
+    showSection(initialSection);
 });
