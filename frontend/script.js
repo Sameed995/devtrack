@@ -1,17 +1,43 @@
 const API_BASE = 'http://127.0.0.1:8000';
 
+// Auto-refresh logs while the Logs tab is active
+const LOGS_AUTO_REFRESH_MS = 5000;
+let logsAutoRefreshTimerId = null;
+let lastLogsSignature = null;
+
+function startLogsAutoRefresh() {
+    if (logsAutoRefreshTimerId) return;
+    logsAutoRefreshTimerId = setInterval(() => {
+        const logsSection = document.getElementById('logs');
+        if (!logsSection || !logsSection.classList.contains('active')) return;
+        loadLogs({ skipIfUnchanged: true });
+    }, LOGS_AUTO_REFRESH_MS);
+}
+
+function stopLogsAutoRefresh() {
+    if (!logsAutoRefreshTimerId) return;
+    clearInterval(logsAutoRefreshTimerId);
+    logsAutoRefreshTimerId = null;
+}
+
 // Show/hide sections
 function showSection(sectionId) {
     document.querySelectorAll('.section').forEach(section => {
         section.classList.remove('active');
     });
     document.getElementById(sectionId).classList.add('active');
+
+    // Ensure we don't keep polling when leaving the Logs tab
+    if (sectionId !== 'logs') {
+        stopLogsAutoRefresh();
+    }
     
     if (sectionId === 'dashboard') {
         loadEndpoints();
     } else if (sectionId === 'logs') {
         loadEndpointsForFilter();
         loadLogs();
+        startLogsAutoRefresh();
     }
 }
 
@@ -178,7 +204,8 @@ function loadEndpointsForFilter() {
 }
 
 // Load logs
-function loadLogs() {
+function loadLogs(options = {}) {
+    const { skipIfUnchanged = false } = options || {};
     const endpointId = document.getElementById('endpoint-filter').value;
     const url = endpointId ? `${API_BASE}/endpoints/${endpointId}/logs/` : `${API_BASE}/logs/`;
     
@@ -186,6 +213,12 @@ function loadLogs() {
         .then(res => res.json())
         .then(logs => {
             const list = document.getElementById('logs-list');
+
+            const signature = `${endpointId || 'all'}:${logs.length}:${logs[0]?.id || ''}`;
+            if (skipIfUnchanged && signature === lastLogsSignature) {
+                return;
+            }
+            lastLogsSignature = signature;
             
             if (logs.length === 0) {
                 list.innerHTML = '<p class="loading">No logs found.</p>';
@@ -410,5 +443,15 @@ function escapeHtml(text) {
 
 // Load dashboard on page load
 window.addEventListener('load', () => {
+    // If user changes endpoint filter while on Logs, update immediately
+    document.getElementById('endpoint-filter')?.addEventListener('change', () => {
+        const logsSection = document.getElementById('logs');
+        if (logsSection && logsSection.classList.contains('active')) {
+            // reset signature so the table updates even if the first fetch matches an old signature
+            lastLogsSignature = null;
+            loadLogs();
+        }
+    });
+
     showSection('dashboard');
 });
