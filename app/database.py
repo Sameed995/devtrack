@@ -1,7 +1,7 @@
 import logging
 import os
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from dotenv import load_dotenv
 
@@ -31,6 +31,28 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 class Base(DeclarativeBase):
     pass
+
+
+def ensure_schema() -> None:
+    """Best-effort schema tweaks for simple deployments (no Alembic).
+
+    SQLAlchemy's create_all() won't add columns to existing tables, so we
+    apply small, idempotent ALTERs here.
+    """
+
+    statements = [
+        "ALTER TABLE endpoints ADD COLUMN IF NOT EXISTS interval_minutes INTEGER",
+        "ALTER TABLE endpoints ADD COLUMN IF NOT EXISTS interval_seconds INTEGER",
+    ]
+
+    try:
+        with engine.connect() as conn:
+            for stmt in statements:
+                conn.execute(text(stmt))
+            conn.commit()
+    except Exception:
+        # Don't block app startup if the DB user lacks ALTER permissions.
+        logger.exception("Schema ensure step failed")
 
 
 def get_db():

@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, HttpUrl, ConfigDict
+from pydantic import BaseModel, HttpUrl, ConfigDict, model_validator
 
 from app.models import StatusEnum
 
@@ -8,11 +8,51 @@ from app.models import StatusEnum
 class EndpointCreate(BaseModel):
     name: str
     url: HttpUrl
-    interval_minutes: Optional[int] = None  # 2, 5, 10, 15 or None for manual
+    # Preferred: seconds (supports 10s)
+    interval_seconds: Optional[int] = None  # 10, 120, 300, 600, 900 or None
+    # Backward compatibility: minutes
+    interval_minutes: Optional[int] = None  # 2, 5, 10, 15 or None
+
+    @model_validator(mode="after")
+    def validate_interval(self):
+        allowed_seconds = {10, 120, 300, 600, 900}
+        allowed_minutes = {2, 5, 10, 15}
+
+        if self.interval_seconds is not None and self.interval_seconds not in allowed_seconds:
+            raise ValueError("interval_seconds must be one of 10, 120, 300, 600, 900 or null")
+
+        if self.interval_minutes is not None and self.interval_minutes not in allowed_minutes:
+            raise ValueError("interval_minutes must be one of 2, 5, 10, 15 or null")
+
+        if self.interval_seconds is not None and self.interval_minutes is not None:
+            expected = self.interval_minutes * 60
+            if self.interval_seconds != expected:
+                raise ValueError("Provide only interval_seconds or interval_minutes (not both)")
+
+        return self
 
 
 class EndpointUpdate(BaseModel):
+    interval_seconds: Optional[int] = None
     interval_minutes: Optional[int] = None
+
+    @model_validator(mode="after")
+    def validate_interval(self):
+        allowed_seconds = {10, 120, 300, 600, 900}
+        allowed_minutes = {2, 5, 10, 15}
+
+        if self.interval_seconds is not None and self.interval_seconds not in allowed_seconds:
+            raise ValueError("interval_seconds must be one of 10, 120, 300, 600, 900 or null")
+
+        if self.interval_minutes is not None and self.interval_minutes not in allowed_minutes:
+            raise ValueError("interval_minutes must be one of 2, 5, 10, 15 or null")
+
+        if self.interval_seconds is not None and self.interval_minutes is not None:
+            expected = self.interval_minutes * 60
+            if self.interval_seconds != expected:
+                raise ValueError("Provide only interval_seconds or interval_minutes (not both)")
+
+        return self
 
 
 class EndpointResponse(BaseModel):
@@ -21,6 +61,7 @@ class EndpointResponse(BaseModel):
     id: int
     name: str
     url: str
+    interval_seconds: Optional[int] = None
     interval_minutes: Optional[int] = None
     created_at: datetime
 

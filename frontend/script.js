@@ -41,6 +41,23 @@ function showSection(sectionId) {
     }
 }
 
+function getEffectiveIntervalSeconds(endpoint) {
+    if (!endpoint) return null;
+    if (endpoint.interval_seconds !== undefined && endpoint.interval_seconds !== null) {
+        return endpoint.interval_seconds;
+    }
+    if (endpoint.interval_minutes !== undefined && endpoint.interval_minutes !== null) {
+        return endpoint.interval_minutes * 60;
+    }
+    return null;
+}
+
+function formatIntervalLabel(intervalSeconds) {
+    if (!intervalSeconds) return 'Manual';
+    if (intervalSeconds < 60) return `${intervalSeconds}s`;
+    return `${Math.round(intervalSeconds / 60)}m`;
+}
+
 // Load endpoints for dashboard
 function loadEndpoints() {
     fetch(`${API_BASE}/endpoints/`)
@@ -58,7 +75,8 @@ function loadEndpoints() {
             
             endpoints.forEach(ep => {
                 const created = new Date(ep.created_at).toLocaleDateString();
-                const interval = ep.interval_minutes ? `${ep.interval_minutes}m` : 'Manual';
+                const intervalSeconds = getEffectiveIntervalSeconds(ep);
+                const interval = formatIntervalLabel(intervalSeconds);
                 html += `<tr>
                     <td>${ep.id}</td>
                     <td>${escapeHtml(ep.name)}</td>
@@ -66,10 +84,11 @@ function loadEndpoints() {
                     <td>
                         <select onchange="updateInterval(${ep.id}, this.value)" class="interval-select">
                             <option value="">Manual</option>
-                            <option value="2" ${ep.interval_minutes === 2 ? 'selected' : ''}>2 min</option>
-                            <option value="5" ${ep.interval_minutes === 5 ? 'selected' : ''}>5 min</option>
-                            <option value="10" ${ep.interval_minutes === 10 ? 'selected' : ''}>10 min</option>
-                            <option value="15" ${ep.interval_minutes === 15 ? 'selected' : ''}>15 min</option>
+                            <option value="10" ${intervalSeconds === 10 ? 'selected' : ''}>10 sec</option>
+                            <option value="120" ${intervalSeconds === 120 ? 'selected' : ''}>2 min</option>
+                            <option value="300" ${intervalSeconds === 300 ? 'selected' : ''}>5 min</option>
+                            <option value="600" ${intervalSeconds === 600 ? 'selected' : ''}>10 min</option>
+                            <option value="900" ${intervalSeconds === 900 ? 'selected' : ''}>15 min</option>
                         </select>
                     </td>
                     <td>${created}</td>
@@ -98,10 +117,10 @@ document.getElementById('register-form')?.addEventListener('submit', (e) => {
     const url = document.getElementById('endpoint-url').value;
     const interval = document.getElementById('endpoint-interval').value;
     
-    const payload = { 
-        name, 
+    const payload = {
+        name,
         url,
-        interval_minutes: interval ? parseInt(interval) : null
+        interval_seconds: interval ? parseInt(interval) : null
     };
     
     fetch(`${API_BASE}/endpoints/`, {
@@ -402,7 +421,7 @@ function downloadLogsAsCSV() {
 // Update endpoint check interval
 function updateInterval(endpointId, interval) {
     const payload = {
-        interval_minutes: interval ? parseInt(interval) : null
+        interval_seconds: interval ? parseInt(interval) : null
     };
     
     fetch(`${API_BASE}/endpoints/${endpointId}/interval`, {
@@ -417,7 +436,8 @@ function updateInterval(endpointId, interval) {
         return res.json();
     })
     .then(data => {
-        const intervalText = data.interval_minutes ? `${data.interval_minutes} minutes` : 'manual checks only';
+        const intervalSeconds = getEffectiveIntervalSeconds(data);
+        const intervalText = intervalSeconds ? (intervalSeconds < 60 ? `${intervalSeconds} seconds` : `${Math.round(intervalSeconds / 60)} minutes`) : 'manual checks only';
         showNotification(`Check interval updated to ${intervalText}`, 'success');
         loadEndpoints();
     })

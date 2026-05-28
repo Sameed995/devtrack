@@ -18,7 +18,11 @@ scheduled_jobs = {}  # Track which endpoints have scheduled jobs
 
 def schedule_endpoint_check(endpoint: models.Endpoint) -> None:
     """Schedule automatic health checks for an endpoint if interval is set."""
-    if not endpoint.interval_minutes:
+    interval_seconds = endpoint.interval_seconds
+    if interval_seconds is None and endpoint.interval_minutes is not None:
+        interval_seconds = endpoint.interval_minutes * 60
+
+    if not interval_seconds:
         # Remove job if interval is None
         remove_endpoint_check(endpoint.id)
         return
@@ -32,7 +36,7 @@ def schedule_endpoint_check(endpoint: models.Endpoint) -> None:
     # Schedule new job
     scheduler.add_job(
         func=run_scheduled_check,
-        trigger=IntervalTrigger(minutes=endpoint.interval_minutes),
+        trigger=IntervalTrigger(seconds=interval_seconds),
         id=job_id,
         args=[endpoint.id],
         replace_existing=True,

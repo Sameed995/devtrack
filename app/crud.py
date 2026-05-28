@@ -7,10 +7,23 @@ from app import models, schemas
 
 
 def create_endpoint(db: Session, payload: schemas.EndpointCreate) -> models.Endpoint:
+    interval_seconds: Optional[int]
+    if payload.interval_seconds is not None:
+        interval_seconds = payload.interval_seconds
+    elif payload.interval_minutes is not None:
+        interval_seconds = payload.interval_minutes * 60
+    else:
+        interval_seconds = None
+
+    interval_minutes: Optional[int] = None
+    if interval_seconds is not None and interval_seconds % 60 == 0 and interval_seconds >= 60:
+        interval_minutes = interval_seconds // 60
+
     endpoint = models.Endpoint(
         name=payload.name,
         url=str(payload.url),
-        interval_minutes=payload.interval_minutes,
+        interval_seconds=interval_seconds,
+        interval_minutes=interval_minutes,
     )
     try:
         db.add(endpoint)
@@ -97,12 +110,30 @@ def delete_all_endpoints(db: Session) -> None:
     db.commit()
 
 
-def update_endpoint_interval(db: Session, endpoint_id: int, interval_minutes: int) -> Optional[models.Endpoint]:
-    """Update the check interval for an endpoint."""
+def update_endpoint_interval(
+    db: Session,
+    endpoint_id: int,
+    interval_seconds: Optional[int] = None,
+    interval_minutes: Optional[int] = None,
+) -> Optional[models.Endpoint]:
+    """Update the check interval for an endpoint.
+
+    Prefer interval_seconds; interval_minutes is accepted for older clients.
+    Passing both as None disables auto-checks.
+    """
     endpoint = get_endpoint(db, endpoint_id)
     if not endpoint:
         return None
-    endpoint.interval_minutes = interval_minutes
+
+    if interval_seconds is None and interval_minutes is not None:
+        interval_seconds = interval_minutes * 60
+
+    endpoint.interval_seconds = interval_seconds
+    if interval_seconds is not None and interval_seconds % 60 == 0 and interval_seconds >= 60:
+        endpoint.interval_minutes = interval_seconds // 60
+    else:
+        endpoint.interval_minutes = None
+
     db.commit()
     db.refresh(endpoint)
     return endpoint

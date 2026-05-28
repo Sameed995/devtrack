@@ -80,7 +80,12 @@ def get_summary(endpoint_id: int, db: Session = Depends(get_db)):
 @router.patch("/{endpoint_id}/interval", response_model=schemas.EndpointResponse)
 def update_endpoint_interval(endpoint_id: int, payload: schemas.EndpointUpdate, db: Session = Depends(get_db)):
     """Update the automatic check interval for an endpoint."""
-    endpoint = crud.update_endpoint_interval(db, endpoint_id, payload.interval_minutes)
+    endpoint = crud.update_endpoint_interval(
+        db,
+        endpoint_id,
+        interval_seconds=payload.interval_seconds,
+        interval_minutes=payload.interval_minutes,
+    )
     if not endpoint:
         raise HTTPException(status_code=404, detail=f"Endpoint {endpoint_id} not found")
     
