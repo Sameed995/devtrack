@@ -45,15 +45,70 @@ function isAuthenticated() {
 
 function updateAuthUI() {
     const username = getStoredUsername();
+
     const authUserEl = document.getElementById('auth-user');
     const logoutBtn = document.getElementById('logout-btn');
 
+    const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
+
+    const loginHeading = document.getElementById('login-heading');
+    const signupHeading = document.getElementById('signup-heading');
+
+    const authSection = document.getElementById('auth');
+
+    // Header text
     if (authUserEl) {
-        authUserEl.textContent = username ? `Signed in as ${username}` : 'Not signed in';
+        authUserEl.textContent = username
+            ? `Signed in as ${username}`
+            : 'Not signed in';
     }
 
+    // Logout button
     if (logoutBtn) {
         logoutBtn.style.display = username ? 'inline-block' : 'none';
+    }
+
+    // If logged in
+    if (username) {
+
+        // Hide forms
+        if (loginForm) loginForm.style.display = 'none';
+        if (signupForm) signupForm.style.display = 'none';
+
+        // Hide headings
+        if (loginHeading) loginHeading.style.display = 'none';
+        if (signupHeading) signupHeading.style.display = 'none';
+
+        // Show welcome message
+        let welcome = document.getElementById('welcome-user');
+
+        if (!welcome) {
+            welcome = document.createElement('div');
+            welcome.id = 'welcome-user';
+            authSection.appendChild(welcome);
+        }
+
+        welcome.innerHTML = `
+            <h3>Welcome, ${username} 👋</h3>
+            <p>You are logged in.</p>
+        `;
+
+    } else {
+
+        // Show forms
+        if (loginForm) loginForm.style.display = 'block';
+        if (signupForm) signupForm.style.display = 'block';
+
+        // Show headings
+        if (loginHeading) loginHeading.style.display = 'block';
+        if (signupHeading) signupHeading.style.display = 'block';
+
+        // Remove welcome message
+        const welcome = document.getElementById('welcome-user');
+        if (welcome) {
+            welcome.remove();
+        }
     }
 }
 
