@@ -43,6 +43,27 @@ def ensure_schema() -> None:
     statements = [
         "ALTER TABLE endpoints ADD COLUMN IF NOT EXISTS interval_minutes INTEGER",
         "ALTER TABLE endpoints ADD COLUMN IF NOT EXISTS interval_seconds INTEGER",
+        "ALTER TABLE endpoints ADD COLUMN IF NOT EXISTS user_id INTEGER",
+        # Remove global URL uniqueness (new behavior is per-user uniqueness).
+        "ALTER TABLE endpoints DROP CONSTRAINT IF EXISTS endpoints_url_key",
+        # Add FK + composite unique in an idempotent way.
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_endpoints_user_id') THEN
+                ALTER TABLE endpoints
+                    ADD CONSTRAINT fk_endpoints_user_id
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+            END IF;
+
+            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_endpoints_user_url') THEN
+                ALTER TABLE endpoints
+                    ADD CONSTRAINT uq_endpoints_user_url
+                    UNIQUE (user_id, url);
+            END IF;
+        END
+        $$;
+        """,
     ]
 
     try:

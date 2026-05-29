@@ -35,7 +35,7 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[mod
     return user
 
 
-def create_endpoint(db: Session, payload: schemas.EndpointCreate) -> models.Endpoint:
+def create_endpoint(db: Session, payload: schemas.EndpointCreate, *, user_id: int) -> models.Endpoint:
     interval_seconds: Optional[int]
     if payload.interval_seconds is not None:
         interval_seconds = payload.interval_seconds
@@ -49,6 +49,7 @@ def create_endpoint(db: Session, payload: schemas.EndpointCreate) -> models.Endp
         interval_minutes = interval_seconds // 60
 
     endpoint = models.Endpoint(
+        user_id=user_id,
         name=payload.name,
         url=str(payload.url),
         interval_seconds=interval_seconds,
@@ -64,27 +65,33 @@ def create_endpoint(db: Session, payload: schemas.EndpointCreate) -> models.Endp
         raise ValueError("An endpoint with this URL already exists")
 
 
-def get_endpoint(db: Session, endpoint_id: int) -> Optional[models.Endpoint]:
-    return db.query(models.Endpoint).filter(models.Endpoint.id == endpoint_id).first()
+def get_endpoint(db: Session, endpoint_id: int, *, user_id: Optional[int] = None) -> Optional[models.Endpoint]:
+    query = db.query(models.Endpoint).filter(models.Endpoint.id == endpoint_id)
+    if user_id is not None:
+        query = query.filter(models.Endpoint.user_id == user_id)
+    return query.first()
 
 
-def get_all_endpoints(db: Session, skip: int = 0, limit: int = 100) -> list[models.Endpoint]:
-    return db.query(models.Endpoint).offset(skip).limit(limit).all()
+def get_all_endpoints(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    *,
+    user_id: Optional[int] = None,
+) -> list[models.Endpoint]:
+    query = db.query(models.Endpoint)
+    if user_id is not None:
+        query = query.filter(models.Endpoint.user_id == user_id)
+    return query.offset(skip).limit(limit).all()
 
 
-def delete_endpoint(db: Session, endpoint_id: int) -> bool:
-    endpoint = get_endpoint(db, endpoint_id)
+def delete_endpoint(db: Session, endpoint_id: int, *, user_id: int) -> bool:
+    endpoint = get_endpoint(db, endpoint_id, user_id=user_id)
     if not endpoint:
         return False
     db.delete(endpoint)
     db.commit()
-    
-    # If no endpoints left, reset the sequence
-    remaining_count = db.query(models.Endpoint).count()
-    if remaining_count == 0:
-        db.execute(text("ALTER SEQUENCE public.endpoints_id_seq RESTART WITH 1"))
-        db.commit()
-    
+
     return True
 
 
@@ -109,10 +116,19 @@ def create_check_log(
     return log
 
 
-def get_all_logs(db: Session, skip: int = 0, limit: int = 200) -> list[models.CheckLog]:
+def get_all_logs(
+    db: Session,
+    skip: int = 0,
+    limit: int = 200,
+    *,
+    user_id: Optional[int] = None,
+) -> list[models.CheckLog]:
+    query = db.query(models.CheckLog)
+    if user_id is not None:
+        query = query.join(models.Endpoint).filter(models.Endpoint.user_id == user_id)
+
     return (
-        db.query(models.CheckLog)
-        .order_by(models.CheckLog.created_at.desc())
+        query.order_by(models.CheckLog.created_at.desc())
         .offset(skip)
         .limit(limit)
         .all()
@@ -120,22 +136,31 @@ def get_all_logs(db: Session, skip: int = 0, limit: int = 200) -> list[models.Ch
 
 
 def get_logs_for_endpoint(
-    db: Session, endpoint_id: int, skip: int = 0, limit: int = 100
+    db: Session,
+    endpoint_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    *,
+    user_id: Optional[int] = None,
 ) -> list[models.CheckLog]:
+    query = db.query(models.CheckLog).filter(models.CheckLog.endpoint_id == endpoint_id)
+    if user_id is not None:
+        query = query.join(models.Endpoint).filter(models.Endpoint.user_id == user_id)
+
     return (
-        db.query(models.CheckLog)
-        .filter(models.CheckLog.endpoint_id == endpoint_id)
-        .order_by(models.CheckLog.created_at.desc())
+        query.order_by(models.CheckLog.created_at.desc())
         .offset(skip)
         .limit(limit)
         .all()
     )
 
 
-def delete_all_endpoints(db: Session) -> None:
-    """Delete all endpoints and reset the PostgreSQL sequence to 1."""
-    db.query(models.Endpoint).delete()
-    db.execute(text("ALTER SEQUENCE public.endpoints_id_seq RESTART WITH 1"))
+def delete_all_endpoints(db: Session, *, user_id: int) -> None:
+    """Delete all endpoints for a user.
+
+    Note: We intentionally do not reset the global sequence.
+    """
+    db.query(models.Endpoint).filter(models.Endpoint.user_id == user_id).delete()
     db.commit()
 
 
@@ -144,13 +169,15 @@ def update_endpoint_interval(
     endpoint_id: int,
     interval_seconds: Optional[int] = None,
     interval_minutes: Optional[int] = None,
+    *,
+    user_id: Optional[int] = None,
 ) -> Optional[models.Endpoint]:
     """Update the check interval for an endpoint.
 
     Prefer interval_seconds; interval_minutes is accepted for older clients.
     Passing both as None disables auto-checks.
     """
-    endpoint = get_endpoint(db, endpoint_id)
+    endpoint = get_endpoint(db, endpoint_id, user_id=user_id)
     if not endpoint:
         return None
 

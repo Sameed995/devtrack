@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Enum as SAEnum
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Enum as SAEnum, UniqueConstraint
 from sqlalchemy.orm import relationship
 import enum
 
@@ -13,10 +13,14 @@ class StatusEnum(str, enum.Enum):
 
 class Endpoint(Base):
     __tablename__ = "endpoints"
+    __table_args__ = (
+        UniqueConstraint("user_id", "url", name="uq_endpoints_user_url"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     name = Column(String(255), nullable=False)
-    url = Column(String(2048), nullable=False, unique=True)
+    url = Column(String(2048), nullable=False)
     # Scheduling configuration.
     # Prefer interval_seconds for new functionality (supports sub-minute intervals).
     interval_minutes = Column(Integer, nullable=True)  # Backward compatibility
@@ -24,6 +28,7 @@ class Endpoint(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     logs = relationship("CheckLog", back_populates="endpoint", cascade="all, delete-orphan")
+    user = relationship("User", back_populates="endpoints")
 
 
 class CheckLog(Base):
@@ -47,3 +52,5 @@ class User(Base):
     username = Column(String(255), nullable=False, unique=True, index=True)
     hashed_password = Column(String(255), nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    endpoints = relationship("Endpoint", back_populates="user", cascade="all, delete-orphan")
