@@ -62,4 +62,4 @@ htmlcov/
 venv/lib/
 
 # Do not track dependency lock/list
-requirements.txt
+
