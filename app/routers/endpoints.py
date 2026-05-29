@@ -2,11 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
+from app.auth import get_current_user
 from app.database import get_db
 from app.services.monitor import run_health_check, compute_summary
 from app.services.scheduler import schedule_endpoint_check
 
-router = APIRouter(prefix="/endpoints", tags=["Endpoints"])
+router = APIRouter(
+    prefix="/endpoints",
+    tags=["Endpoints"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.post("/", response_model=schemas.EndpointResponse, status_code=status.HTTP_201_CREATED)

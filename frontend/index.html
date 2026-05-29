@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DevTrack - API Monitoring</title>
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,12 +15,17 @@
     <header>
         <h1>DevTrack</h1>
         <p class="tagline">API Endpoint Monitoring System</p>
+        <div class="auth-status">
+            <span id="auth-user" class="auth-user"></span>
+            <button id="logout-btn" class="btn btn-small" style="display: none;">Logout</button>
+        </div>
     </header>
 
     <nav class="menu">
         <a href="#" onclick="showSection('dashboard')" class="nav-link">Dashboard</a>
         <a href="#" onclick="showSection('register')" class="nav-link">Register Endpoint</a>
         <a href="#" onclick="showSection('logs')" class="nav-link">View Logs</a>
+        <a href="#" onclick="showSection('auth')" class="nav-link">Account</a>
     </nav>
 
     <!-- Dashboard Section -->
@@ -72,6 +78,37 @@
         <div id="logs-list" class="logs-table">
             <p class="loading">Loading logs...</p>
         </div>
+    </section>
+
+    <!-- Auth Section -->
+    <section id="auth" class="section">
+        <h2>Account</h2>
+
+        <h3 class="subheading">Login</h3>
+        <form id="login-form" class="form">
+            <div class="form-group">
+                <label for="login-username">Username:</label>
+                <input type="text" id="login-username" autocomplete="username" required>
+            </div>
+            <div class="form-group">
+                <label for="login-password">Password:</label>
+                <input type="password" id="login-password" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn">Login</button>
+        </form>
+
+        <h3 class="subheading" style="margin-top: 30px;">Register</h3>
+        <form id="signup-form" class="form">
+            <div class="form-group">
+                <label for="signup-username">Username:</label>
+                <input type="text" id="signup-username" autocomplete="username" required>
+            </div>
+            <div class="form-group">
+                <label for="signup-password">Password:</label>
+                <input type="password" id="signup-password" autocomplete="new-password" required>
+            </div>
+            <button type="submit" class="btn">Create Account</button>
+        </form>
     </section>
 
 </div>

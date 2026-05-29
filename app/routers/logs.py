@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
+from app.auth import get_current_user
 from app.database import get_db
 
-router = APIRouter(tags=["Logs"])
+router = APIRouter(tags=["Logs"], dependencies=[Depends(get_current_user)])
 
 
 @router.get("/logs", response_model=list[schemas.CheckLogResponse])

@@ -4,6 +4,35 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app import models, schemas
+from app.auth import hash_password, verify_password
+
+
+def get_user_by_username(db: Session, username: str) -> Optional[models.User]:
+    return db.query(models.User).filter(models.User.username == username).first()
+
+
+def create_user(db: Session, payload: schemas.UserCreate) -> models.User:
+    user = models.User(
+        username=payload.username,
+        hashed_password=hash_password(payload.password),
+    )
+    try:
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+    except IntegrityError:
+        db.rollback()
+        raise ValueError("Username already taken")
+
+
+def authenticate_user(db: Session, username: str, password: str) -> Optional[models.User]:
+    user = get_user_by_username(db, username)
+    if not user:
+        return None
+    if not verify_password(password, user.hashed_password):
+        return None
+    return user
 
 
 def create_endpoint(db: Session, payload: schemas.EndpointCreate) -> models.Endpoint:

@@ -126,6 +126,17 @@ The frontend connects to the API at `http://127.0.0.1:8000` and provides:
 
 ## 5. API Reference
 
+### Authentication
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/auth/register` | Create a new user account |
+| `POST` | `/auth/login` | Login and receive a Bearer token |
+
+All `/endpoints/*` and `/logs/*` routes require:
+
+`Authorization: Bearer <token>`
+
 ### Endpoint Management
 
 | Method | Path | Description |
@@ -153,26 +164,43 @@ The frontend connects to the API at `http://127.0.0.1:8000` and provides:
 
 ## 6. Example Requests
 
+### Register + login
+
+```bash
+curl -X POST http://localhost:8000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"demo","password":"demo123"}'
+
+TOKEN=$(curl -sS -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"demo","password":"demo123"}' \
+  | python3 -c 'import sys, json; print(json.load(sys.stdin)["access_token"])')
+```
+
 ### Register an endpoint
 ```bash
 curl -X POST http://localhost:8000/endpoints/ \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name": "GitHub API", "url": "https://api.github.com"}'
 ```
 
 ### Trigger a health check
 ```bash
-curl -X POST http://localhost:8000/endpoints/1/check/
+curl -X POST http://localhost:8000/endpoints/1/check/ \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 ### Get uptime summary
 ```bash
-curl http://localhost:8000/endpoints/1/summary/
+curl http://localhost:8000/endpoints/1/summary/ \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 ### View logs
 ```bash
-curl "http://localhost:8000/endpoints/1/logs/?limit=10"
+curl "http://localhost:8000/endpoints/1/logs/?limit=10" \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 ---

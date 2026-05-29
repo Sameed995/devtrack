@@ -1,5 +1,80 @@
 const API_BASE = 'http://127.0.0.1:8000';
 
+const TOKEN_STORAGE_KEY = 'devtrack.token';
+const USERNAME_STORAGE_KEY = 'devtrack.username';
+
+function getAuthToken() {
+    try {
+        return localStorage.getItem(TOKEN_STORAGE_KEY);
+    } catch (_) {
+        return null;
+    }
+}
+
+function getStoredUsername() {
+    try {
+        return localStorage.getItem(USERNAME_STORAGE_KEY);
+    } catch (_) {
+        return null;
+    }
+}
+
+function setAuthSession({ token, username }) {
+    try {
+        localStorage.setItem(TOKEN_STORAGE_KEY, token);
+        localStorage.setItem(USERNAME_STORAGE_KEY, username);
+    } catch (_) {
+        // ignore storage errors
+    }
+    updateAuthUI();
+}
+
+function clearAuthSession() {
+    try {
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        localStorage.removeItem(USERNAME_STORAGE_KEY);
+    } catch (_) {
+        // ignore
+    }
+    updateAuthUI();
+}
+
+function isAuthenticated() {
+    return Boolean(getAuthToken());
+}
+
+function updateAuthUI() {
+    const username = getStoredUsername();
+    const authUserEl = document.getElementById('auth-user');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    if (authUserEl) {
+        authUserEl.textContent = username ? `Signed in as ${username}` : 'Not signed in';
+    }
+
+    if (logoutBtn) {
+        logoutBtn.style.display = username ? 'inline-block' : 'none';
+    }
+}
+
+function apiFetch(url, options = {}) {
+    const token = getAuthToken();
+    const headers = new Headers(options.headers || {});
+    if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    return fetch(url, { ...options, headers }).then(res => {
+        if (res.status === 401) {
+            clearAuthSession();
+            showNotification('Please login to continue.', 'info');
+            showSection('auth');
+            throw new Error('Unauthorized');
+        }
+        return res;
+    });
+}
+
 // Endpoint name cache for rendering logs
 let endpointNameById = {};
 
@@ -30,6 +105,11 @@ function stopLogsAutoRefresh() {
 
 // Show/hide sections
 function showSection(sectionId) {
+    if (sectionId !== 'auth' && !isAuthenticated()) {
+        sectionId = 'auth';
+        showNotification('Please login to continue.', 'info');
+    }
+
     try {
         localStorage.setItem('devtrack.activeSection', sectionId);
     } catch (_) {
@@ -74,7 +154,7 @@ function formatIntervalLabel(intervalSeconds) {
 
 // Load endpoints for dashboard
 function loadEndpoints() {
-    fetch(`${API_BASE}/endpoints/`)
+    apiFetch(`${API_BASE}/endpoints/`)
         .then(res => res.json())
         .then(endpoints => {
             const list = document.getElementById('endpoints-list');
@@ -143,7 +223,7 @@ document.getElementById('register-form')?.addEventListener('submit', (e) => {
         interval_seconds: interval ? parseInt(interval) : null
     };
     
-    fetch(`${API_BASE}/endpoints/`, {
+    apiFetch(`${API_BASE}/endpoints/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -173,7 +253,7 @@ document.getElementById('register-form')?.addEventListener('submit', (e) => {
 
 // Trigger health check
 function triggerCheck(endpointId) {
-    fetch(`${API_BASE}/endpoints/${endpointId}/check/`, {
+    apiFetch(`${API_BASE}/endpoints/${endpointId}/check/`, {
         method: 'POST'
     })
     .then(res => res.json())
@@ -189,7 +269,7 @@ function triggerCheck(endpointId) {
 
 // View endpoint summary
 function viewSummary(endpointId) {
-    fetch(`${API_BASE}/endpoints/${endpointId}/summary/`)
+    apiFetch(`${API_BASE}/endpoints/${endpointId}/summary/`)
         .then(res => res.json())
         .then(data => {
             const uptime = (data.uptime_percentage || 0).toFixed(2);
@@ -209,7 +289,7 @@ function deleteEndpoint(endpointId) {
         'Delete Endpoint?',
         'Are you sure you want to delete this endpoint and all its logs? This action cannot be undone.',
         () => {
-            fetch(`${API_BASE}/endpoints/${endpointId}/`, {
+            apiFetch(`${API_BASE}/endpoints/${endpointId}/`, {
                 method: 'DELETE'
             })
             .then(() => {
@@ -226,7 +306,7 @@ function deleteEndpoint(endpointId) {
 
 // Load endpoints for filter
 function loadEndpointsForFilter() {
-    fetch(`${API_BASE}/endpoints/`)
+    apiFetch(`${API_BASE}/endpoints/`)
         .then(res => res.json())
         .then(endpoints => {
             const filter = document.getElementById('endpoint-filter');
@@ -261,7 +341,7 @@ function loadLogs(options = {}) {
     const endpointId = document.getElementById('endpoint-filter').value;
     const url = endpointId ? `${API_BASE}/endpoints/${endpointId}/logs/` : `${API_BASE}/logs/`;
     
-    fetch(url)
+    apiFetch(url)
         .then(res => res.json())
         .then(logs => {
             const list = document.getElementById('logs-list');
@@ -370,7 +450,7 @@ function downloadLogs() {
     const endpointId = document.getElementById('endpoint-filter').value;
     const url = endpointId ? `${API_BASE}/endpoints/${endpointId}/logs/` : `${API_BASE}/logs/`;
     
-    fetch(url)
+    apiFetch(url)
         .then(res => res.json())
         .then(logs => {
             if (logs.length === 0) {
@@ -413,7 +493,7 @@ function downloadLogsAsCSV() {
     const endpointId = document.getElementById('endpoint-filter').value;
     const url = endpointId ? `${API_BASE}/endpoints/${endpointId}/logs/` : `${API_BASE}/logs/`;
     
-    fetch(url)
+    apiFetch(url)
         .then(res => res.json())
         .then(logs => {
             if (logs.length === 0) {
@@ -461,7 +541,7 @@ function updateInterval(endpointId, interval) {
         interval_seconds: interval ? parseInt(interval) : null
     };
     
-    fetch(`${API_BASE}/endpoints/${endpointId}/interval`, {
+    apiFetch(`${API_BASE}/endpoints/${endpointId}/interval`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -500,6 +580,73 @@ function escapeHtml(text) {
 
 // Load dashboard on page load
 window.addEventListener('load', () => {
+    updateAuthUI();
+
+    document.getElementById('logout-btn')?.addEventListener('click', () => {
+        clearAuthSession();
+        showNotification('Logged out.', 'success');
+        showSection('auth');
+    });
+
+    document.getElementById('login-form')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const username = document.getElementById('login-username').value;
+        const password = document.getElementById('login-password').value;
+
+        apiFetch(`${API_BASE}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        })
+        .then(res => {
+            if (!res.ok) {
+                return res.json().then(data => {
+                    throw new Error(data.detail || 'Login failed.');
+                });
+            }
+            return res.json();
+        })
+        .then(data => {
+            setAuthSession({ token: data.access_token, username: data.user?.username || username });
+            showNotification('Login successful!', 'success');
+            document.getElementById('login-form').reset();
+            showSection('dashboard');
+        })
+        .catch(err => {
+            showNotification(err.message, 'error');
+            console.error(err);
+        });
+    });
+
+    document.getElementById('signup-form')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const username = document.getElementById('signup-username').value;
+        const password = document.getElementById('signup-password').value;
+
+        apiFetch(`${API_BASE}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        })
+        .then(res => {
+            if (!res.ok) {
+                return res.json().then(data => {
+                    throw new Error(data.detail || 'Registration failed.');
+                });
+            }
+            return res.json();
+        })
+        .then(() => {
+            showNotification('Account created. You can now login.', 'success');
+            document.getElementById('signup-form').reset();
+        })
+        .catch(err => {
+            showNotification(err.message, 'error');
+            console.error(err);
+        });
+    });
     // If user changes endpoint filter while on Logs, update immediately
     document.getElementById('endpoint-filter')?.addEventListener('change', () => {
         const logsSection = document.getElementById('logs');
@@ -510,10 +657,10 @@ window.addEventListener('load', () => {
         }
     });
 
-    let initialSection = 'dashboard';
+    let initialSection = isAuthenticated() ? 'dashboard' : 'auth';
     try {
         const saved = localStorage.getItem('devtrack.activeSection');
-        if (saved && document.getElementById(saved)) {
+        if (saved && document.getElementById(saved) && (saved === 'auth' || isAuthenticated())) {
             initialSection = saved;
         }
     } catch (_) {

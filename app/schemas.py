@@ -5,6 +5,30 @@ from pydantic import BaseModel, HttpUrl, ConfigDict, model_validator
 from app.models import StatusEnum
 
 
+class UserCreate(BaseModel):
+    username: str
+    password: str
+
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+
+class UserPublic(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    username: str
+    created_at: datetime
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserPublic
+
+
 class EndpointCreate(BaseModel):
     name: str
     url: HttpUrl

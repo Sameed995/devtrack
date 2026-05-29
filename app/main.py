@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine, ensure_schema
 from app import models
-from app.routers import endpoints, logs
+from app.routers import endpoints, logs, auth
 from app.services.scheduler import start_scheduler, stop_scheduler
 
 app = FastAPI(
@@ -18,14 +18,19 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=[
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+        "http://0.0.0.0:8080",
+    ],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(endpoints.router)
 app.include_router(logs.router)
+app.include_router(auth.router)
 
 
 @app.on_event("startup")

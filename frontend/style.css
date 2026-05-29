@@ -137,6 +137,20 @@ header {
     text-align: center;
 }
 
+.auth-status {
+    margin-top: 12px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.auth-user {
+    font-size: 13px;
+    color: #ecf0f1;
+}
+
 header h1 {
     font-size: 32px;
     margin-bottom: 5px;
@@ -213,6 +227,7 @@ label {
 
 input[type="text"],
 input[type="url"],
+input[type="password"],
 select {
     width: 100%;
     padding: 8px 10px;
@@ -224,10 +239,17 @@ select {
 
 input[type="text"]:focus,
 input[type="url"]:focus,
+input[type="password"]:focus,
 select:focus {
     outline: none;
     border: 1px solid #3498db;
     box-shadow: 0 0 3px #3498db;
+}
+
+.subheading {
+    color: #2c3e50;
+    font-size: 16px;
+    margin-bottom: 10px;
 }
 
 .btn {
