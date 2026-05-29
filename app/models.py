@@ -18,6 +18,7 @@ class Endpoint(Base):
     )
 
     id = Column(Integer, primary_key=True, index=True)
+    display_id = Column(Integer, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     name = Column(String(255), nullable=False)
     url = Column(String(2048), nullable=False)

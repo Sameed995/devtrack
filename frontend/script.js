@@ -79,8 +79,13 @@ function apiFetch(url, options = {}) {
 let endpointNameById = {};
 
 function getEndpointName(endpointId) {
-    const name = endpointNameById[String(endpointId)];
-    return name ? name : `Endpoint ${endpointId}`;
+    const endpoint = endpointNameById[String(endpointId)];
+
+    if (!endpoint) {
+        return `Endpoint`;
+    }
+
+    return `${endpoint.name} (#${endpoint.displayId})`;
 }
 
 // Auto-refresh logs while the Logs tab is active
@@ -162,7 +167,10 @@ function loadEndpoints() {
             // Update name cache
             endpointNameById = {};
             endpoints.forEach(ep => {
-                endpointNameById[String(ep.id)] = ep.name;
+                endpointNameById[String(ep.id)] = {
+                    name: ep.name,
+                    displayId: ep.display_id
+                };
             });
             
             if (endpoints.length === 0) {
@@ -178,7 +186,7 @@ function loadEndpoints() {
                 const intervalSeconds = getEffectiveIntervalSeconds(ep);
                 const interval = formatIntervalLabel(intervalSeconds);
                 html += `<tr>
-                    <td>${ep.id}</td>
+                    <td>${ep.display_id}</td>
                     <td>${escapeHtml(ep.name)}</td>
                     <td><small>${escapeHtml(ep.url)}</small></td>
                     <td>
@@ -315,7 +323,10 @@ function loadEndpointsForFilter() {
             // Update name cache
             endpointNameById = {};
             endpoints.forEach(ep => {
-                endpointNameById[String(ep.id)] = ep.name;
+                endpointNameById[String(ep.id)] = {
+                    name: ep.name,
+                    displayId: ep.display_id
+                };
             });
             
             endpoints.forEach(ep => {

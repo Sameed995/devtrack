@@ -37,6 +37,7 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[mod
 
 def create_endpoint(db: Session, payload: schemas.EndpointCreate, *, user_id: int) -> models.Endpoint:
     interval_seconds: Optional[int]
+
     if payload.interval_seconds is not None:
         interval_seconds = payload.interval_seconds
     elif payload.interval_minutes is not None:
@@ -45,21 +46,35 @@ def create_endpoint(db: Session, payload: schemas.EndpointCreate, *, user_id: in
         interval_seconds = None
 
     interval_minutes: Optional[int] = None
+
     if interval_seconds is not None and interval_seconds % 60 == 0 and interval_seconds >= 60:
         interval_minutes = interval_seconds // 60
 
+    # Get latest display_id for this user
+    last_endpoint = (
+        db.query(models.Endpoint)
+        .filter(models.Endpoint.user_id == user_id)
+        .order_by(models.Endpoint.display_id.desc())
+        .first()
+    )
+
+    next_display_id = 1 if not last_endpoint else last_endpoint.display_id + 1
+
     endpoint = models.Endpoint(
         user_id=user_id,
+        display_id=next_display_id,
         name=payload.name,
         url=str(payload.url),
         interval_seconds=interval_seconds,
         interval_minutes=interval_minutes,
     )
+
     try:
         db.add(endpoint)
         db.commit()
         db.refresh(endpoint)
         return endpoint
+
     except IntegrityError:
         db.rollback()
         raise ValueError("An endpoint with this URL already exists")

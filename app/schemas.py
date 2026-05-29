@@ -83,6 +83,7 @@ class EndpointResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    display_id: int
     name: str
     url: str
     interval_seconds: Optional[int] = None
