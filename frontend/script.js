@@ -19,6 +19,11 @@ function getStoredUsername() {
     }
 }
 
+function logoutUser(){
+    clearAuthSession()
+    showNotification('Please login to continue.', 'info');
+}
+
 function setAuthSession({ token, username }) {
     try {
         localStorage.setItem(TOKEN_STORAGE_KEY, token);

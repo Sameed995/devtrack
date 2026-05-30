@@ -387,6 +387,11 @@ footer {
     background-color: #27ae60;
     border-color: #229954;
 }
+.btn.btn-csv:hover{
+    
+    background-color: #27ae60;
+    border-color: #229954;
+}
 
 .auth-spacing {
     margin-top: 35px;
