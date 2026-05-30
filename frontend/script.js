@@ -44,74 +44,55 @@ function isAuthenticated() {
 }
 
 function updateAuthUI() {
+
     const username = getStoredUsername();
 
     const authUserEl = document.getElementById('auth-user');
     const logoutBtn = document.getElementById('logout-btn');
 
-    const loginForm = document.getElementById('login-form');
-    const signupForm = document.getElementById('signup-form');
+    const loggedOutView = document.getElementById('logged-out-view');
+    const loggedInView = document.getElementById('logged-in-view');
 
-    const loginHeading = document.getElementById('login-heading');
-    const signupHeading = document.getElementById('signup-heading');
+    const accountUsername = document.getElementById('account-username');
 
-    const authSection = document.getElementById('auth');
-
-    // Header text
     if (authUserEl) {
         authUserEl.textContent = username
             ? `Signed in as ${username}`
             : 'Not signed in';
     }
 
-    // Logout button
     if (logoutBtn) {
-        logoutBtn.style.display = username ? 'inline-block' : 'none';
+        logoutBtn.style.display = username
+            ? 'inline-block'
+            : 'none';
     }
 
-    // If logged in
     if (username) {
 
-        // Hide forms
-        if (loginForm) loginForm.style.display = 'none';
-        if (signupForm) signupForm.style.display = 'none';
-
-        // Hide headings
-        if (loginHeading) loginHeading.style.display = 'none';
-        if (signupHeading) signupHeading.style.display = 'none';
-
-        // Show welcome message
-        let welcome = document.getElementById('welcome-user');
-
-        if (!welcome) {
-            welcome = document.createElement('div');
-            welcome.id = 'welcome-user';
-            authSection.appendChild(welcome);
+        if (loggedOutView) {
+            loggedOutView.style.display = 'none';
         }
 
-        welcome.innerHTML = `
-            <h3>Welcome, ${username} 👋</h3>
-            <p>You are logged in.</p>
-        `;
+        if (loggedInView) {
+            loggedInView.style.display = 'block';
+        }
+
+        if (accountUsername) {
+            accountUsername.textContent =
+                `Welcome, ${username} 👋`;
+        }
 
     } else {
 
-        // Show forms
-        if (loginForm) loginForm.style.display = 'block';
-        if (signupForm) signupForm.style.display = 'block';
+        if (loggedOutView) {
+            loggedOutView.style.display = 'block';
+        }
 
-        // Show headings
-        if (loginHeading) loginHeading.style.display = 'block';
-        if (signupHeading) signupHeading.style.display = 'block';
-
-        // Remove welcome message
-        const welcome = document.getElementById('welcome-user');
-        if (welcome) {
-            welcome.remove();
+        if (loggedInView) {
+            loggedInView.style.display = 'none';
         }
     }
 }
-
 function apiFetch(url, options = {}) {
     const token = getAuthToken();
     const headers = new Headers(options.headers || {});
@@ -149,11 +130,21 @@ let logsAutoRefreshTimerId = null;
 let lastLogsSignature = null;
 
 function startLogsAutoRefresh() {
+
     if (logsAutoRefreshTimerId) return;
+
     logsAutoRefreshTimerId = setInterval(() => {
-        const logsSection = document.getElementById('logs');
-        if (!logsSection || !logsSection.classList.contains('active')) return;
+
+        const authSection =
+            document.getElementById('auth');
+
+        if (!authSection ||
+            !authSection.classList.contains('active')) {
+            return;
+        }
+
         loadLogs({ skipIfUnchanged: true });
+
     }, LOGS_AUTO_REFRESH_MS);
 }
 
@@ -165,36 +156,52 @@ function stopLogsAutoRefresh() {
 
 // Show/hide sections
 function showSection(sectionId) {
-    if (sectionId !== 'auth' && !isAuthenticated()) {
+
+    if (sectionId !== 'auth' &&
+        !isAuthenticated()) {
+
         sectionId = 'auth';
-        showNotification('Please login to continue.', 'info');
+
+        showNotification(
+            'Please login to continue.',
+            'info'
+        );
     }
 
     try {
-        localStorage.setItem('devtrack.activeSection', sectionId);
-    } catch (_) {
-        // ignore storage errors (private mode, disabled, etc.)
-    }
+        localStorage.setItem(
+            'devtrack.activeSection',
+            sectionId
+        );
+    } catch (_) {}
 
-    document.querySelectorAll('.section').forEach(section => {
-        section.classList.remove('active');
-    });
-    document.getElementById(sectionId).classList.add('active');
+    document.querySelectorAll('.section')
+        .forEach(section => {
+            section.classList.remove('active');
+        });
 
-    // Ensure we don't keep polling when leaving the Logs tab
-    if (sectionId !== 'logs') {
-        stopLogsAutoRefresh();
-    }
-    
+    document
+        .getElementById(sectionId)
+        .classList.add('active');
+
     if (sectionId === 'dashboard') {
         loadEndpoints();
-    } else if (sectionId === 'logs') {
+    }
+
+    if (sectionId === 'auth' &&
+        isAuthenticated()) {
+
         loadEndpointsForFilter();
+
         loadLogs();
+
         startLogsAutoRefresh();
+
+    } else {
+
+        stopLogsAutoRefresh();
     }
 }
-
 function getEffectiveIntervalSeconds(endpoint) {
     if (!endpoint) return null;
     if (endpoint.interval_seconds !== undefined && endpoint.interval_seconds !== null) {
@@ -392,8 +399,8 @@ function loadEndpointsForFilter() {
             });
 
             // If we're on the Logs tab and logs are already rendered, re-render so names appear
-            const logsSection = document.getElementById('logs');
-            if (logsSection && logsSection.classList.contains('active')) {
+            const authSection = document.getElementById('auth');
+            if (authSection && authSection.classList.contains('active')) {
                 lastLogsSignature = null;
                 loadLogs();
             }
@@ -715,8 +722,8 @@ window.addEventListener('load', () => {
     });
     // If user changes endpoint filter while on Logs, update immediately
     document.getElementById('endpoint-filter')?.addEventListener('change', () => {
-        const logsSection = document.getElementById('logs');
-        if (logsSection && logsSection.classList.contains('active')) {
+        const authSection = document.getElementById('auth');
+        if (authSection && authSection.classList.contains('active')){
             // reset signature so the table updates even if the first fetch matches an old signature
             lastLogsSignature = null;
             loadLogs();

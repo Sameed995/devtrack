@@ -353,6 +353,44 @@ footer {
     font-size: 12px;
     color: #666;
 }
+.account-card {
+    margin-bottom: 35px;
+}
+
+.account-card p {
+    margin: 10px 0 20px;
+}
+
+.account-logs {
+    margin-top: 20px;
+}
+
+.logs-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.logs-table {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid #bdc3c7;
+}
+
+.btn-download {
+    background-color: #2980b9;
+    border-color: #1f618d;
+}
+
+.btn-csv {
+    background-color: #27ae60;
+    border-color: #229954;
+}
+
+.auth-spacing {
+    margin-top: 35px;
+}
 
 /* Responsive */
 @media (max-width: 600px) {
@@ -376,4 +414,7 @@ footer {
     h2 {
         font-size: 20px;
     }
+    .logs-actions {
+    flex-direction: column;
+}
 }

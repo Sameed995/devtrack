@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DevTrack - API Monitoring</title>
+
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -12,44 +13,92 @@
 <div id="notification" class="notification" style="display: none;"></div>
 
 <div class="container">
+
     <header>
         <h1>DevTrack</h1>
-        <p class="tagline">API Endpoint Monitoring System</p>
+
+        <p class="tagline">
+            API Endpoint Monitoring System
+        </p>
+
         <div class="auth-status">
             <span id="auth-user" class="auth-user"></span>
-            <button id="logout-btn" class="btn btn-small" style="display: none;">Logout</button>
+
+            <button id="logout-btn"
+                    class="btn btn-small"
+                    style="display: none;">
+                Logout
+            </button>
         </div>
     </header>
 
     <nav class="menu">
-        <a href="#" onclick="showSection('dashboard')" class="nav-link">Dashboard</a>
-        <a href="#" onclick="showSection('register')" class="nav-link">Register Endpoint</a>
-        <a href="#" onclick="showSection('logs')" class="nav-link">View Logs</a>
-        <a href="#" onclick="showSection('auth')" class="nav-link">Account</a>
+
+        <a href="#"
+           onclick="showSection('dashboard')"
+           class="nav-link">
+            Dashboard
+        </a>
+
+        <a href="#"
+           onclick="showSection('register')"
+           class="nav-link">
+            Register Endpoint
+        </a>
+
+        <a href="#"
+           onclick="showSection('auth')"
+           class="nav-link">
+            Account
+        </a>
+
     </nav>
 
-    <!-- Dashboard Section -->
+    <!-- Dashboard -->
     <section id="dashboard" class="section active">
+
         <h2>Registered Endpoints</h2>
+
         <div id="endpoints-list" class="endpoints-table">
             <p class="loading">Loading endpoints...</p>
         </div>
+
     </section>
 
-    <!-- Register Section -->
+    <!-- Register -->
     <section id="register" class="section">
+
         <h2>Register New Endpoint</h2>
+
         <form id="register-form" class="form">
+
             <div class="form-group">
-                <label for="endpoint-name">Endpoint Name:</label>
-                <input type="text" id="endpoint-name" placeholder="e.g., GitHub API" required>
+                <label for="endpoint-name">
+                    Endpoint Name:
+                </label>
+
+                <input type="text"
+                       id="endpoint-name"
+                       placeholder="e.g., GitHub API"
+                       required>
             </div>
+
             <div class="form-group">
-                <label for="endpoint-url">Endpoint URL:</label>
-                <input type="url" id="endpoint-url" placeholder="e.g., https://api.github.com" required>
+                <label for="endpoint-url">
+                    Endpoint URL:
+                </label>
+
+                <input type="url"
+                       id="endpoint-url"
+                       placeholder="https://api.github.com"
+                       required>
             </div>
+
             <div class="form-group">
-                <label for="endpoint-interval">Check Interval (optional):</label>
+                <label for="endpoint-interval">
+                    Check Interval:
+                </label>
+
                 <select id="endpoint-interval">
                     <option value="">Manual Check Only</option>
                     <option value="10">Every 10 Seconds</option>
@@ -59,76 +108,160 @@
                     <option value="900">Every 15 Minutes</option>
                 </select>
             </div>
-            <button type="submit" class="btn">Register Endpoint</button>
+
+            <button type="submit" class="btn">
+                Register Endpoint
+            </button>
+
         </form>
+
     </section>
 
-    <!-- Logs Section -->
-    <section id="logs" class="section">
-        <h2>Check Logs</h2>
-        <div class="form-group">
-            <label for="endpoint-filter">Filter by Endpoint:</label>
-            <select id="endpoint-filter">
-                <option value="">All Endpoints</option>
-            </select>
-            <button onclick="loadLogs()" class="btn">Load Logs</button>
-            <button onclick="downloadLogs()" class="btn" style="background-color: #2980b9; border-color: #1f618d;">Download as Text</button>
-            <button onclick="downloadLogsAsCSV()" class="btn" style="background-color: #27ae60; border-color: #229954;">Download as CSV</button>
-        </div>
-        <div id="logs-list" class="logs-table">
-            <p class="loading">Loading logs...</p>
-        </div>
-    </section>
+    <!-- Account -->
+    <section id="auth" class="section">
 
-    <!-- Auth Section -->
-<section id="auth" class="section">
-    <h2>Account</h2>
+        <h2>Account</h2>
 
-    <div id="account-section">
-
+        <!-- Logged Out -->
         <div id="logged-out-view">
-            <h3 id="login-heading" class="subheading">Login</h3>
+
+            <h3 class="subheading">
+                Login
+            </h3>
+
             <form id="login-form" class="form">
+
                 <div class="form-group">
-                    <label for="login-username">Username:</label>
-                    <input type="text" id="login-username" autocomplete="username" required>
+                    <label for="login-username">
+                        Username:
+                    </label>
+
+                    <input type="text"
+                           id="login-username"
+                           autocomplete="username"
+                           required>
                 </div>
+
                 <div class="form-group">
-                    <label for="login-password">Password:</label>
-                    <input type="password" id="login-password" autocomplete="current-password" required>
+                    <label for="login-password">
+                        Password:
+                    </label>
+
+                    <input type="password"
+                           id="login-password"
+                           autocomplete="current-password"
+                           required>
                 </div>
-                <button type="submit" class="btn">Login</button>
+
+                <button type="submit" class="btn">
+                    Login
+                </button>
+
             </form>
 
-            <h3 id="signup-heading" class="subheading" style="margin-top: 30px;">
+            <h3 class="subheading auth-spacing">
                 Register
             </h3>
+
             <form id="signup-form" class="form">
+
                 <div class="form-group">
-                    <label for="signup-username">Username:</label>
-                    <input type="text" id="signup-username" autocomplete="username" required>
+                    <label for="signup-username">
+                        Username:
+                    </label>
+
+                    <input type="text"
+                           id="signup-username"
+                           autocomplete="username"
+                           required>
                 </div>
+
                 <div class="form-group">
-                    <label for="signup-password">Password:</label>
-                    <input type="password" id="signup-password" autocomplete="new-password" required>
+                    <label for="signup-password">
+                        Password:
+                    </label>
+
+                    <input type="password"
+                           id="signup-password"
+                           autocomplete="new-password"
+                           required>
                 </div>
-                <button type="submit" class="btn">Create Account</button>
+
+                <button type="submit" class="btn">
+                    Create Account
+                </button>
+
             </form>
+
         </div>
 
+        <!-- Logged In -->
         <div id="logged-in-view" style="display: none;">
-            <div class="form">
-                <h3 id="account-username"></h3>
-                <p>You are currently logged in.</p>
 
-                <button onclick="logoutUser()" class="btn btn-danger">
+            <div class="account-card">
+
+                <h3 id="account-username"></h3>
+
+                <p>
+                    You are currently logged in.
+                </p>
+
+                <button onclick="logoutUser()"
+                        class="btn btn-danger">
                     Logout
                 </button>
+
             </div>
+
+            <!-- Logs -->
+            <div class="account-logs">
+
+                <h3 class="subheading">
+                    Check Logs
+                </h3>
+
+                <div class="form-group">
+
+                    <label for="endpoint-filter">
+                        Filter by Endpoint:
+                    </label>
+
+                    <select id="endpoint-filter">
+                        <option value="">
+                            All Endpoints
+                        </option>
+                    </select>
+
+                    <div class="logs-actions">
+
+                        <button onclick="loadLogs()"
+                                class="btn">
+                            Load Logs
+                        </button>
+
+                        <button onclick="downloadLogs()"
+                                class="btn btn-download">
+                            Download as Text
+                        </button>
+
+                        <button onclick="downloadLogsAsCSV()"
+                                class="btn btn-csv">
+                            Download as CSV
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <div id="logs-list" class="logs-table">
+                    <p class="loading">Loading logs...</p>
+                </div>
+
+            </div>
+
         </div>
 
-    </div>
-</section>
+    </section>
 
 </div>
 
