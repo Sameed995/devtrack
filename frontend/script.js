@@ -747,22 +747,28 @@ window.addEventListener('load', () => {
 
     showSection(initialSection);
 
-    const signupPassword =
+const signupPassword =
     document.getElementById('signup-password');
 
 const passwordStrength =
     document.getElementById('password-strength');
 
+const toggleSignupPassword =
+    document.getElementById('toggle-signup-password');
+
 signupPassword?.addEventListener('input', () => {
 
     const password = signupPassword.value;
 
+    // Show/hide password strength
     if (!password) {
         passwordStrength.style.display = 'none';
+        toggleSignupPassword.style.display = 'none';
         return;
     }
 
     passwordStrength.style.display = 'block';
+    toggleSignupPassword.style.display = 'inline-block';
 
     let strength = 0;
 
@@ -773,6 +779,7 @@ signupPassword?.addEventListener('input', () => {
     if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
 
     if (strength <= 2) {
+
         passwordStrength.textContent =
             'Password strength: Weak';
 
@@ -795,25 +802,56 @@ signupPassword?.addEventListener('input', () => {
         passwordStrength.className =
             'password-strength strong';
     }
-   
 });
- const toggleSignupPassword =
-    document.getElementById('toggle-signup-password');
 
+// Toggle signup password visibility
 toggleSignupPassword?.addEventListener('click', () => {
 
-    const input =
-        document.getElementById('signup-password');
+    if (signupPassword.type === 'password') {
 
-    if (input.type === 'password') {
-
-        input.type = 'text';
+        signupPassword.type = 'text';
         toggleSignupPassword.textContent = 'Hide';
 
     } else {
 
-        input.type = 'password';
+        signupPassword.type = 'password';
         toggleSignupPassword.textContent = 'Show';
+    }
+});
+
+
+// LOGIN PASSWORD
+
+const loginPassword =
+    document.getElementById('login-password');
+
+const toggleLoginPassword =
+    document.getElementById('toggle-login-password');
+
+loginPassword?.addEventListener('input', () => {
+
+    if (loginPassword.value.length > 0) {
+
+        toggleLoginPassword.style.display = 'inline-block';
+
+    } else {
+
+        toggleLoginPassword.style.display = 'none';
+    }
+});
+
+// Toggle login password visibility
+toggleLoginPassword?.addEventListener('click', () => {
+
+    if (loginPassword.type === 'password') {
+
+        loginPassword.type = 'text';
+        toggleLoginPassword.textContent = 'Hide';
+
+    } else {
+
+        loginPassword.type = 'password';
+        toggleLoginPassword.textContent = 'Show';
     }
 });
 });

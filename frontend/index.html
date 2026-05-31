@@ -192,14 +192,24 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="login-password">
-                        Password:
-                    </label>
+    <label for="login-password">
+        Password:
+    </label>
 
-                    <input type="password"
-                           id="login-password"
-                           autocomplete="current-password"
-                           required>
+                    <div class="password-wrapper">
+
+                        <input type="password"
+                            id="login-password"
+                            autocomplete="current-password"
+                            required>
+
+                        <button type="button"
+                                id="toggle-login-password"
+                                class="toggle-password">
+                            Show
+                        </button>
+
+                    </div>
                 </div>
 
                 <button type="submit" class="btn">
