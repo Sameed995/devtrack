@@ -84,7 +84,7 @@ function updateAuthUI() {
 
         if (accountUsername) {
             accountUsername.textContent =
-                `Welcome, ${username} 👋`;
+                `Welcome, ${username}`;
         }
 
     } else {
