@@ -148,10 +148,24 @@
                         Password:
                     </label>
 
-                    <input type="password"
-                           id="signup-password"
-                           autocomplete="new-password"
-                           required>
+                    <div class="password-wrapper">
+
+                                <input type="password"
+                                    id="signup-password"
+                                    autocomplete="new-password"
+                                    required>
+
+                                <button type="button"
+                                        id="toggle-signup-password"
+                                        class="toggle-password">
+                                    Show
+                                </button>
+
+                            </div>
+                           <div id="password-strength"
+                            class="password-strength"
+                            style="display: none;">
+                        </div>
                 </div>
 
                 <button type="submit" class="btn">

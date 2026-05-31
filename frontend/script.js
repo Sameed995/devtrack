@@ -110,7 +110,7 @@ function apiFetch(url, options = {}) {
             clearAuthSession();
             showNotification('Please login to continue.', 'info');
             showSection('auth');
-            throw new Error('Unauthorized');
+            throw new Error('Invalid username or password');
         }
         return res;
     });
@@ -746,4 +746,74 @@ window.addEventListener('load', () => {
     }
 
     showSection(initialSection);
+
+    const signupPassword =
+    document.getElementById('signup-password');
+
+const passwordStrength =
+    document.getElementById('password-strength');
+
+signupPassword?.addEventListener('input', () => {
+
+    const password = signupPassword.value;
+
+    if (!password) {
+        passwordStrength.style.display = 'none';
+        return;
+    }
+
+    passwordStrength.style.display = 'block';
+
+    let strength = 0;
+
+    if (password.length >= 8) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
+
+    if (strength <= 2) {
+        passwordStrength.textContent =
+            'Password strength: Weak';
+
+        passwordStrength.className =
+            'password-strength weak';
+
+    } else if (strength <= 4) {
+
+        passwordStrength.textContent =
+            'Password strength: Medium';
+
+        passwordStrength.className =
+            'password-strength medium';
+
+    } else {
+
+        passwordStrength.textContent =
+            'Password strength: Strong';
+
+        passwordStrength.className =
+            'password-strength strong';
+    }
+   
+});
+ const toggleSignupPassword =
+    document.getElementById('toggle-signup-password');
+
+toggleSignupPassword?.addEventListener('click', () => {
+
+    const input =
+        document.getElementById('signup-password');
+
+    if (input.type === 'password') {
+
+        input.type = 'text';
+        toggleSignupPassword.textContent = 'Hide';
+
+    } else {
+
+        input.type = 'password';
+        toggleSignupPassword.textContent = 'Show';
+    }
+});
 });

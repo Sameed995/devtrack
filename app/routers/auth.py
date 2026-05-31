@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
-from app.auth import create_access_token
+from app.auth import create_access_token, validate_password
 from app.database import get_db
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -12,8 +12,10 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 def register(payload: schemas.UserCreate, db: Session = Depends(get_db)):
     if not payload.username.strip():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username is required")
-    if not payload.password:
+    if not payload.password.strip():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password is required")
+    
+    validate_password(payload.password)
 
     try:
         user = crud.create_user(db, payload)

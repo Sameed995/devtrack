@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app import models
-
+import re
 
 _bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -31,6 +31,34 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         )
     except ValueError:
         return False
+
+def validate_password(password: str) -> None:
+
+    errors = []
+
+    if len(password) < 8:
+        errors.append("at least 8 characters")
+
+    if not re.search(r"[A-Z]", password):
+        errors.append("one uppercase letter")
+
+    if not re.search(r"[a-z]", password):
+        errors.append("one lowercase letter")
+
+    if not re.search(r"\d", password):
+        errors.append("one number")
+
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        errors.append("one special character")
+
+    if errors:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Password must contain: "
+                + ", ".join(errors)
+            ),
+        )
 
 
 def _jwt_secret() -> str:
@@ -94,6 +122,6 @@ def get_current_user(
 
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
-        raise _unauthorized("User not found")
+        raise _unauthorized("Invalid token")
 
     return user
