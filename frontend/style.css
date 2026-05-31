@@ -14,6 +14,8 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    overflow-x: hidden;
+    width: 100%;
 }
 
 /* Notification */
@@ -282,7 +284,11 @@ select:focus {
 
 table {
     width: 100%;
-    border-collapse: collapse;
+    min-width: 600px;
+}
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
 }
 
 th {
@@ -373,11 +379,11 @@ footer {
     margin-top: 12px;
 }
 
-.logs-table {
+/* .logs-table {
     width: 100%;
     overflow-x: auto;
     border: 1px solid #bdc3c7;
-}
+} */
 
 .btn-download {
     background-color: #2980b9;
