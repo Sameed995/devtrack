@@ -119,7 +119,7 @@ Tables are created automatically on first startup.
 # Backend (http://localhost:8000)
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-# Frontend — in a separate terminal (http://localhost:8080)
+# Frontend — in a separate terminal (http://localhost:808/frontend)
 cd frontend && python3 -m http.server 8080
 ```
 
