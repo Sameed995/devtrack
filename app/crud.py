@@ -51,18 +51,24 @@ def create_user(db: Session, payload: schemas.UserCreate) -> models.User:
 
 
 def verify_user_otp(db: Session, email: str, otp_code: str) -> Optional[models.User]:
-    """Verify OTP and mark email as verified."""
+    """Verify OTP and mark email as verified.
+    
+    Raises ValueError with specific error messages:
+    - "Email not found"
+    - "OTP has expired"
+    - "Invalid OTP code"
+    """
     user = get_user_by_email(db, email)
     if not user:
-        return None
+        raise ValueError("Email not found")
     
     # Check if OTP is expired
     if user.otp_expires_at and datetime.now(timezone.utc) > user.otp_expires_at:
-        return None
+        raise ValueError("OTP has expired")
     
     # Check if OTP matches
     if user.otp_code != otp_code:
-        return None
+        raise ValueError("Invalid OTP code")
     
     # Mark email as verified
     user.email_verified = True
