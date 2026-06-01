@@ -21,7 +21,21 @@ function getStoredUsername() {
 
 function logoutUser(){
     clearAuthSession()
-    showNotification('Please login to continue.', 'info');
+    // Reset and hide signup forms
+    const signupForm = document.getElementById('signup-form');
+    const loginForm = document.getElementById('login-form');
+    const otpForm = document.getElementById('otp-form');
+    const passwordStrength = document.getElementById('password-strength');
+    const toggleSignupPassword = document.getElementById('toggle-signup-password');
+    
+    if (signupForm) signupForm.reset();
+    if (loginForm) loginForm.reset();
+    if (otpForm) otpForm.reset();
+    if (passwordStrength) passwordStrength.style.display = 'none';
+    if (toggleSignupPassword) toggleSignupPassword.style.display = 'none';
+    
+    showOTPForm(false);
+    showNotification('Logged out successfully.', 'success');
 }
 
 function setAuthSession({ token, username }) {
@@ -59,6 +73,8 @@ function updateAuthUI() {
     const loggedInView = document.getElementById('logged-in-view');
 
     const accountUsername = document.getElementById('account-username');
+    const passwordStrength = document.getElementById('password-strength');
+    const toggleSignupPassword = document.getElementById('toggle-signup-password');
 
     if (authUserEl) {
         authUserEl.textContent = username
@@ -95,6 +111,14 @@ function updateAuthUI() {
 
         if (loggedInView) {
             loggedInView.style.display = 'none';
+        }
+
+        // Hide password strength and toggle button when logged out
+        if (passwordStrength) {
+            passwordStrength.style.display = 'none';
+        }
+        if (toggleSignupPassword) {
+            toggleSignupPassword.style.display = 'none';
         }
     }
 }
