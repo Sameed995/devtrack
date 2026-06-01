@@ -63,3 +63,4 @@ venv/lib/
 
 # Do not track dependency lock/list
 
+EMAIL_SETUP.md

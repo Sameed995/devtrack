@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Enum as SAEnum, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Enum as SAEnum, UniqueConstraint, Boolean
 from sqlalchemy.orm import relationship
 import enum
 
@@ -51,7 +51,11 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(255), nullable=False, unique=True, index=True)
+    email = Column(String(255), nullable=False, unique=True, index=True)
     hashed_password = Column(String(255), nullable=False)
+    email_verified = Column(Boolean, default=False, nullable=False)
+    otp_code = Column(String(6), nullable=True)
+    otp_expires_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     endpoints = relationship("Endpoint", back_populates="user", cascade="all, delete-orphan")

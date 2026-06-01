@@ -14,6 +14,8 @@ def register(payload: schemas.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username is required")
     if not payload.password.strip():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password is required")
+    if not payload.email.strip():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is required")
     
     validate_password(payload.password)
 
@@ -22,6 +24,17 @@ def register(payload: schemas.UserCreate, db: Session = Depends(get_db)):
         return user
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/verify-otp", response_model=schemas.TokenResponse)
+def verify_otp(payload: schemas.VerifyOTP, db: Session = Depends(get_db)):
+    """Verify OTP and return access token."""
+    user = crud.verify_user_otp(db, payload.email, payload.otp_code)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired OTP")
+    
+    token = create_access_token(user_id=user.id, username=user.username)
+    return schemas.TokenResponse(access_token=token, user=user)
 
 
 @router.post("/login", response_model=schemas.TokenResponse)

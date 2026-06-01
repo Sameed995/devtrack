@@ -228,6 +228,7 @@ label {
 }
 
 input[type="text"],
+input[type="email"],
 input[type="url"],
 input[type="password"],
 select {
@@ -240,6 +241,7 @@ select {
 }
 
 input[type="text"]:focus,
+input[type="email"]:focus,
 input[type="url"]:focus,
 input[type="password"]:focus,
 select:focus {
@@ -438,6 +440,27 @@ footer {
     font-weight: bold;
     display: none;
 }
+
+.info-text {
+    background-color: #d1ecf1;
+    border: 1px solid #bee5eb;
+    padding: 12px;
+    border-radius: 4px;
+    color: #0c5460;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.btn-secondary {
+    background-color: #95a5a6;
+    border-color: #7f8c8d;
+    margin-left: 10px;
+}
+
+.btn-secondary:hover {
+    background-color: #7f8c8d;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
     nav.menu {

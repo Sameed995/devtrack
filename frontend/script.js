@@ -643,7 +643,6 @@ function updateInterval(endpointId, interval) {
     });
 }
 
-// 
 function escapeHtml(text) {
     if (!text) return '';
     const map = {
@@ -654,6 +653,33 @@ function escapeHtml(text) {
         "'": '&#039;'
     };
     return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+// Show OTP verification form
+function showOTPVerification(email) {
+    showOTPForm(true);
+    document.getElementById('otp-email').value = email;
+    document.getElementById('otp-code').focus();
+}
+
+// Toggle OTP form visibility
+function showOTPForm(show) {
+    const otpForm = document.getElementById('otp-form');
+    const signupForm = document.getElementById('signup-form');
+    if (show) {
+        otpForm.style.display = 'block';
+        signupForm.style.display = 'none';
+    } else {
+        otpForm.style.display = 'none';
+        signupForm.style.display = 'block';
+    }
+}
+
+// Go back from OTP verification to signup
+function backToSignup() {
+    document.getElementById('otp-form').reset();
+    document.getElementById('signup-form').reset();
+    showOTPForm(false);
 }
 
 // Load dashboard on page load
@@ -701,12 +727,13 @@ window.addEventListener('load', () => {
         e.preventDefault();
 
         const username = document.getElementById('signup-username').value;
+        const email = document.getElementById('signup-email').value;
         const password = document.getElementById('signup-password').value;
 
         apiFetch(`${API_BASE}/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ username, email, password })
         })
         .then(res => {
             if (!res.ok) {
@@ -716,9 +743,43 @@ window.addEventListener('load', () => {
             }
             return res.json();
         })
-        .then(() => {
-            showNotification('Account created. You can now login.', 'success');
+        .then((userData) => {
+            showNotification('Account created! Please verify your email with the OTP sent to ' + email, 'success');
+            // Show OTP verification form
+            showOTPVerification(email);
+        })
+        .catch(err => {
+            showNotification(err.message, 'error');
+            console.error(err);
+        });
+    });
+
+    document.getElementById('otp-form')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById('otp-email').value;
+        const otp_code = document.getElementById('otp-code').value;
+
+        apiFetch(`${API_BASE}/auth/verify-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, otp_code })
+        })
+        .then(res => {
+            if (!res.ok) {
+                return res.json().then(data => {
+                    throw new Error(data.detail || 'OTP verification failed.');
+                });
+            }
+            return res.json();
+        })
+        .then(data => {
+            setAuthSession({ token: data.access_token, username: data.user?.username });
+            showNotification('Email verified! You are now logged in.', 'success');
+            document.getElementById('otp-form').reset();
             document.getElementById('signup-form').reset();
+            showOTPForm(false);
+            showSection('dashboard');
         })
         .catch(err => {
             showNotification(err.message, 'error');

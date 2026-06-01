@@ -1,29 +1,76 @@
 from typing import Optional
+from datetime import datetime, timezone
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.auth import hash_password, verify_password
+from app.services.email import generate_otp, send_otp_email, get_otp_expiry_time
 
 
 def get_user_by_username(db: Session, username: str) -> Optional[models.User]:
     return db.query(models.User).filter(models.User.username == username).first()
 
 
+def get_user_by_email(db: Session, email: str) -> Optional[models.User]:
+    return db.query(models.User).filter(models.User.email == email).first()
+
+
 def create_user(db: Session, payload: schemas.UserCreate) -> models.User:
+    """Create a new user and send OTP to email."""
     user = models.User(
         username=payload.username,
+        email=payload.email,
         hashed_password=hash_password(payload.password),
+        email_verified=False,
     )
     try:
         db.add(user)
         db.commit()
         db.refresh(user)
+        
+        # Generate OTP and send email
+        otp_code = generate_otp()
+        user.otp_code = otp_code
+        user.otp_expires_at = get_otp_expiry_time()
+        db.commit()
+        db.refresh(user)
+        
+        # Send OTP email
+        send_otp_email(user.email, otp_code)
+        
         return user
-    except IntegrityError:
+    except IntegrityError as e:
         db.rollback()
-        raise ValueError("Username already taken")
+        if 'username' in str(e):
+            raise ValueError("Username already taken")
+        elif 'email' in str(e):
+            raise ValueError("Email already registered")
+        raise
+
+
+def verify_user_otp(db: Session, email: str, otp_code: str) -> Optional[models.User]:
+    """Verify OTP and mark email as verified."""
+    user = get_user_by_email(db, email)
+    if not user:
+        return None
+    
+    # Check if OTP is expired
+    if user.otp_expires_at and datetime.now(timezone.utc) > user.otp_expires_at:
+        return None
+    
+    # Check if OTP matches
+    if user.otp_code != otp_code:
+        return None
+    
+    # Mark email as verified
+    user.email_verified = True
+    user.otp_code = None
+    user.otp_expires_at = None
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 def authenticate_user(db: Session, username: str, password: str) -> Optional[models.User]:
@@ -31,6 +78,9 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[mod
     if not user:
         return None
     if not verify_password(password, user.hashed_password):
+        return None
+    # Only allow login if email is verified
+    if not user.email_verified:
         return None
     return user
 

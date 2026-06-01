@@ -1,12 +1,13 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, HttpUrl, ConfigDict, model_validator
+from pydantic import BaseModel, HttpUrl, ConfigDict, model_validator, EmailStr
 
 from app.models import StatusEnum
 
 
 class UserCreate(BaseModel):
     username: str
+    email: EmailStr
     password: str
 
 
@@ -15,11 +16,18 @@ class UserLogin(BaseModel):
     password: str
 
 
+class VerifyOTP(BaseModel):
+    email: EmailStr
+    otp_code: str
+
+
 class UserPublic(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     username: str
+    email: str
+    email_verified: bool
     created_at: datetime
 
 
