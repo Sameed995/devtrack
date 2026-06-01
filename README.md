@@ -151,64 +151,31 @@ devtrack/
 │
 ├── app/
 │   ├── __init__.py
-│   ├── main.py                  # FastAPI app factory, lifespan, middleware registration
-│   ├── config.py                # Settings via pydantic-settings (reads .env)
-│   ├── database.py              # Async SQLAlchemy engine + session factory
+│   ├── main.py                  # FastAPI app factory, lifespan hooks, router registration
+│   ├── auth.py                  # JWT utilities, password hashing, token validation
+│   ├── crud.py                  # Database operations (create, read, update, delete)
+│   ├── database.py              # SQLAlchemy engine + session factory
+│   ├── models.py                # ORM models — User, Endpoint, CheckLog, OTPToken
+│   ├── schemas.py               # Pydantic request/response schemas
 │   │
-│   ├── api/
+│   ├── routers/
 │   │   ├── __init__.py
-│   │   ├── deps.py              # Shared dependencies (get_db, get_current_user)
-│   │   └── v1/
-│   │       ├── __init__.py
-│   │       ├── auth.py          # /auth/register, /auth/login, /auth/verify-otp
-│   │       ├── endpoints.py     # CRUD for monitored API endpoints
-│   │       ├── logs.py          # Query check logs, failure history
-│   │       └── dashboard.py     # Aggregated uptime/latency summary
+│   │   ├── auth.py              # /auth/register, /auth/login, /auth/verify-otp
+│   │   ├── endpoints.py         # CRUD routes for monitored API endpoints
+│   │   └── logs.py              # Check log queries and failure history
 │   │
-│   ├── core/
-│   │   ├── security.py          # JWT encode/decode, password hashing
-│   │   ├── email.py             # OTP email delivery via FastAPI-Mail
-│   │   └── logging.py           # Structured JSON logger configuration
-│   │
-│   ├── models/
-│   │   ├── user.py              # User ORM model
-│   │   ├── endpoint.py          # MonitoredEndpoint ORM model
-│   │   ├── check_log.py         # CheckLog ORM model
-│   │   └── otp_token.py         # OTPToken ORM model
-│   │
-│   ├── schemas/
-│   │   ├── auth.py              # RegisterRequest, LoginRequest, TokenResponse
-│   │   ├── endpoint.py          # EndpointCreate, EndpointRead, EndpointUpdate
-│   │   ├── log.py               # CheckLogRead, LogFilter
-│   │   └── dashboard.py         # DashboardSummary, UptimeStats
-│   │
-│   ├── services/
-│   │   ├── auth_service.py      # Registration, login, OTP logic
-│   │   ├── monitor_service.py   # Health check execution + result persistence
-│   │   └── log_service.py       # Log querying, aggregation helpers
-│   │
-│   └── scheduler/
-│       ├── scheduler.py         # APScheduler setup, job registration
-│       └── jobs.py              # Health check job definitions
+│   └── services/
+│       ├── __init__.py
+│       ├── email.py             # OTP email delivery via SMTP
+│       ├── monitor.py           # Health check execution + result persistence
+│       └── scheduler.py        # APScheduler setup and job registration
 │
-├── alembic/
-│   ├── env.py
-│   ├── script.py.mako
-│   └── versions/                # Auto-generated migration files
+├── frontend/
+│   ├── index.html               # Monitoring dashboard UI
+│   ├── script.js                # Dashboard logic — fetch + render check data
+│   └── style.css                # Dashboard styles
 │
-├── tests/
-│   ├── conftest.py
-│   ├── test_auth.py
-│   ├── test_endpoints.py
-│   ├── test_monitor.py
-│   └── test_logs.py
-│
-├── .env.example
-├── alembic.ini
 ├── requirements.txt
-├── requirements-dev.txt
-├── Dockerfile
-├── docker-compose.yml
 └── README.md
 ```
 
@@ -242,9 +209,6 @@ source .venv/bin/activate        # Linux / macOS
 
 ```bash
 pip install -r requirements.txt
-
-# For development (adds pytest, black, ruff, httpx)
-pip install -r requirements-dev.txt
 ```
 
 ### 4. Configure environment variables
