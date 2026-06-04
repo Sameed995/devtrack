@@ -218,8 +218,6 @@ All `/endpoints/*` and `/logs/*` routes require: `Authorization: Bearer <token>`
 - [ ] Real-time WebSocket dashboard updates
 - [ ] Response time trend graphs (p95/p99)
 - [ ] SSL/TLS certificate expiration monitoring
-- [ ] Custom HTTP headers and auth support per endpoint
 - [ ] CSV/JSON log export and scheduled reports
 - [ ] Docker + Docker Compose setup
 - [ ] API rate limiting and caching
-- [ ] CI/CD pipeline with GitHub Actions + pytest suite
