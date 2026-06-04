@@ -1,4 +1,4 @@
-# DevTrack - Production-Grade API Monitoring System
+# DevTrack - API Monitoring System
 
 A comprehensive REST API monitoring platform built with **FastAPI + PostgreSQL + SQLAlchemy**. Features include user authentication with OTP email verification, automated health checks with configurable intervals, real-time monitoring dashboards, and detailed uptime analytics.
 
