@@ -270,6 +270,115 @@
                 </button>
 
             </form>
+            <!-- Forgot Password -->
+<div class="forgot-password-section">
+
+    <button
+        type="button"
+        id="show-forgot-password"
+        class="forgot-password-btn">
+        Forgot Password?
+    </button>
+
+</div>
+
+<!-- Forgot Password Form -->
+<form id="forgot-password-form"
+      class="form"
+      style="display: none;">
+
+    <h3 class="subheading">
+        Reset Password
+    </h3>
+
+    <p class="info-text">
+        Enter your email address to receive a password reset OTP.
+    </p>
+
+    <div class="form-group">
+        <label for="forgot-email">
+            Email:
+        </label>
+
+        <input type="email"
+               id="forgot-email"
+               required>
+    </div>
+
+    <button type="submit" class="btn">
+        Send Reset OTP
+    </button>
+
+    <button type="button"
+            id="cancel-forgot-password"
+            class="btn btn-secondary">
+        Cancel
+    </button>
+
+</form>
+
+<!-- Reset Password Form -->
+<form id="reset-password-form"
+      class="form"
+      style="display: none;">
+
+    <h3 class="subheading">
+        Create New Password
+    </h3>
+
+    <div class="form-group">
+        <label for="reset-email">
+            Email:
+        </label>
+
+        <input type="email"
+               id="reset-email"
+               readonly>
+    </div>
+
+    <div class="form-group">
+        <label for="reset-otp">
+            OTP Code:
+        </label>
+
+        <input type="text"
+               id="reset-otp"
+               maxlength="6"
+               placeholder="000000"
+               required>
+    </div>
+
+    <div class="form-group">
+        <label for="reset-new-password">
+            New Password:
+        </label>
+
+        <div class="password-wrapper">
+
+            <input type="password"
+                   id="reset-new-password"
+                   required>
+
+            <button type="button"
+                    id="toggle-reset-password"
+                    class="toggle-password">
+                Show
+            </button>
+
+        </div>
+    </div>
+
+    <button type="submit" class="btn">
+        Reset Password
+    </button>
+
+    <button type="button"
+            id="cancel-reset-password"
+            class="btn btn-secondary">
+        Cancel
+    </button>
+
+</form>
 
         </div>
 

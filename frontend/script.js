@@ -939,4 +939,200 @@ toggleLoginPassword?.addEventListener('click', () => {
         toggleLoginPassword.textContent = 'Show';
     }
 });
+// Forgot Password Elements
+const forgotPasswordBtn =
+    document.getElementById('show-forgot-password');
+
+const forgotPasswordForm =
+    document.getElementById('forgot-password-form');
+
+const resetPasswordForm =
+    document.getElementById('reset-password-form');
+
+const cancelForgotPassword =
+    document.getElementById('cancel-forgot-password');
+
+const cancelResetPassword =
+    document.getElementById('cancel-reset-password');
+
+const loginForm =
+    document.getElementById('login-form');
+
+// Show forgot password form
+forgotPasswordBtn?.addEventListener('click', () => {
+
+    loginForm.style.display = 'none';
+
+    forgotPasswordForm.style.display = 'block';
+});
+
+// Cancel forgot password
+cancelForgotPassword?.addEventListener('click', () => {
+
+    forgotPasswordForm.reset();
+
+    forgotPasswordForm.style.display = 'none';
+
+    loginForm.style.display = 'block';
+});
+
+// Cancel reset password
+cancelResetPassword?.addEventListener('click', () => {
+
+    resetPasswordForm.reset();
+
+    resetPasswordForm.style.display = 'none';
+
+    loginForm.style.display = 'block';
+});
+
+// Forgot password submit
+forgotPasswordForm?.addEventListener('submit', (e) => {
+
+    e.preventDefault();
+
+    const email =
+        document.getElementById('forgot-email').value;
+
+    apiFetch(`${API_BASE}/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email })
+    })
+    .then(res => {
+
+        if (!res.ok) {
+
+            return res.json().then(data => {
+                throw new Error(
+                    data.detail ||
+                    'Failed to send reset OTP.'
+                );
+            });
+        }
+
+        return res.json();
+    })
+    .then(() => {
+
+        showNotification(
+            'If the account exists, a reset OTP has been sent.',
+            'success'
+        );
+
+        forgotPasswordForm.style.display = 'none';
+
+        resetPasswordForm.style.display = 'block';
+
+        document.getElementById('reset-email').value =
+            email;
+    })
+    .catch(err => {
+
+        showNotification(err.message, 'error');
+
+        console.error(err);
+    });
+});
+
+// Reset password submit
+resetPasswordForm?.addEventListener('submit', (e) => {
+
+    e.preventDefault();
+
+    const email =
+        document.getElementById('reset-email').value;
+
+    const otp_code =
+        document.getElementById('reset-otp').value;
+
+    const new_password =
+        document.getElementById('reset-new-password').value;
+
+    apiFetch(`${API_BASE}/auth/reset-password`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            email,
+            otp_code,
+            new_password
+        })
+    })
+    .then(res => {
+
+        if (!res.ok) {
+
+            return res.json().then(data => {
+                throw new Error(
+                    data.detail ||
+                    'Password reset failed.'
+                );
+            });
+        }
+
+        return res.json();
+    })
+    .then(() => {
+
+        showNotification(
+            'Password reset successful. Please login.',
+            'success'
+        );
+
+        resetPasswordForm.reset();
+
+        resetPasswordForm.style.display = 'none';
+
+        loginForm.style.display = 'block';
+    })
+    .catch(err => {
+
+        showNotification(err.message, 'error');
+
+        console.error(err);
+    });
+});
+
+// Toggle reset password visibility
+const resetPasswordInput =
+    document.getElementById('reset-new-password');
+
+const toggleResetPassword =
+    document.getElementById('toggle-reset-password');
+
+resetPasswordInput?.addEventListener('input', () => {
+
+    if (resetPasswordInput.value.length > 0) {
+
+        toggleResetPassword.style.display =
+            'inline-block';
+
+    } else {
+
+        toggleResetPassword.style.display =
+            'none';
+    }
+});
+
+toggleResetPassword?.addEventListener('click', () => {
+
+    if (resetPasswordInput.type === 'password') {
+
+        resetPasswordInput.type = 'text';
+
+        toggleResetPassword.textContent =
+            'Hide';
+
+    } else {
+
+        resetPasswordInput.type = 'password';
+
+        toggleResetPassword.textContent =
+            'Show';
+    }
+});
 });

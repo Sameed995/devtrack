@@ -460,6 +460,23 @@ footer {
 .btn-secondary:hover {
     background-color: #7f8c8d;
 }
+.forgot-password-section {
+    margin-top: 15px;
+    margin-bottom: 25px;
+}
+
+.forgot-password-btn {
+    background: none;
+    border: none;
+    color: #3498db;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+}
+
+.forgot-password-btn:hover {
+    text-decoration: underline;
+}
 
 /* Responsive */
 @media (max-width: 600px) {

@@ -120,3 +120,12 @@ class EndpointSummary(BaseModel):
     uptime_percentage: float
     average_response_time_ms: Optional[float] = None
     last_checked_at: Optional[datetime] = None
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    otp_code: str
+    new_password: str
