@@ -1,4 +1,4 @@
-# DevTrack - Production-Grade API Monitoring System
+# DevTrack - API Monitoring System
 
 A comprehensive REST API monitoring platform built with **FastAPI + PostgreSQL + SQLAlchemy**. Features include user authentication with OTP email verification, automated health checks with configurable intervals, real-time monitoring dashboards, and detailed uptime analytics.
 
@@ -29,6 +29,7 @@ devtrack/
 │   ├── services/
 │   │   ├── email.py              # SMTP email sending, OTP generation
 │   │   ├── monitor.py            # Health check logic + analytics
+│   │   ├── password_reset.py     # Password reset OTP generation and validation
 │   │   └── scheduler.py          # APScheduler background job management
 │   └── routers/
 │       ├── auth.py               # /auth routes
@@ -119,7 +120,7 @@ Tables are created automatically on first startup.
 # Backend (http://localhost:8000)
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-# Frontend — in a separate terminal (http://localhost:808/frontend)
+# Frontend — in a separate terminal (http://localhost:8080/frontend)
 cd frontend && python3 -m http.server 8080
 ```
 
@@ -138,6 +139,9 @@ All `/endpoints/*` and `/logs/*` routes require: `Authorization: Bearer <token>`
 | `POST` | `/auth/register` | Register new user (sends OTP) |
 | `POST` | `/auth/verify-otp` | Verify OTP and receive access token |
 | `POST` | `/auth/login` | Login with username/password |
+| `POST` | `/auth/forgot-password` | Request password reset (sends OTP to email) |
+| `POST` | `/auth/verify-reset-otp` | Verify reset OTP |
+| `POST` | `/auth/reset-password` | Set new password after OTP verification |
 
 ### Endpoint Management
 
@@ -167,6 +171,7 @@ All `/endpoints/*` and `/logs/*` routes require: `Authorization: Bearer <token>`
 3. **Add Endpoints** — Register URLs to monitor with a check interval
 4. **Automated Monitoring** — APScheduler sends HEAD/GET requests at the configured interval; status code, response time, and errors are recorded
 5. **Analytics** — View uptime percentages, response time trends, and full check history from the dashboard
+6. **Password Reset** — Request a reset OTP via email, verify it, then submit a new password; OTP expires in 10 minutes
 
 ### Health Check Intervals (seconds)
 
