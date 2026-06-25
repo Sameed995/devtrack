@@ -1,3 +1,5 @@
+// todo: remove the id of the eendpoint from the logs table, the name is already shown so no worries about that
+
 const API_BASE = 'http://127.0.0.1:8000';
 
 const TOKEN_STORAGE_KEY = 'devtrack.token';
